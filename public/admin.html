@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ADMIN CONSOLE // GENIUS_REALMS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body { display: flex; flex-direction: column; }
+    .admin-container { max-width: 1200px; margin: 0 auto; padding: 2rem; width: 100%; }
+    .admin-header { margin-bottom: 2rem; }
+    .admin-header h1 { font-family: var(--disp); font-size: 2rem; color: var(--blue); margin-bottom: 0.5rem; }
+    .admin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
+    .admin-section { background: var(--bg2); border: 1px solid var(--bdr); padding: 1.5rem; }
+    .admin-section h2 { font-family: var(--disp); font-size: 1.2rem; color: var(--blue); margin-bottom: 1rem; }
+    .form-group { margin-bottom: 1rem; }
+    .form-label { display: block; font-size: 0.8rem; color: var(--txt-m); margin-bottom: 0.3rem; text-transform: uppercase; letter-spacing: 0.1em; }
+    .form-input { width: 100%; background: var(--bg3); border: 1px solid var(--bdr); color: var(--txt); padding: 0.6rem; font-family: var(--mono); outline: none; }
+    .form-input:focus { border-color: var(--blue); box-shadow: 0 0 8px var(--glow); }
+    .form-textarea { resize: vertical; min-height: 100px; }
+    .btn-submit { background: var(--blue); color: #000; border: none; padding: 0.8rem 1.5rem; cursor: pointer; font-family: var(--mono); font-weight: bold; text-transform: uppercase; width: 100%; }
+    .btn-submit:hover { background: #fff; }
+    .content-list { display: flex; flex-direction: column; gap: 0.8rem; margin-top: 1rem; }
+    .content-item { background: var(--bg3); border: 1px solid rgba(0,170,255,.1); padding: 0.8rem; display: flex; justify-content: space-between; align-items: center; }
+    .content-item-text { flex: 1; }
+    .content-item .btn-delete { background: transparent; border: 1px solid var(--blue); color: var(--blue); padding: 0.3rem 0.8rem; cursor: pointer; font-size: 0.7rem; }
+    .content-item .btn-delete:hover { background: var(--blue); color: #000; }
+    .logout-btn { background: transparent; border: 1px solid var(--blue); color: var(--blue); padding: 0.5rem 1rem; cursor: pointer; }
+    .logout-btn:hover { background: var(--blue); color: #000; }
+    @media(max-width: 768px) {
+      .admin-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<nav id="nav" style="margin-bottom: 2rem;">
+  <a href="/" class="nav-logo">GENIUS<span>_</span>REALMS</a>
+  <div class="nav-right">
+    <button class="logout-btn" onclick="logout()">[ LOGOUT ]</button>
+  </div>
+</nav>
+
+<div class="admin-container">
+  <div class="admin-header">
+    <h1>⚡ ADMIN CONSOLE</h1>
+    <p style="color: var(--txt-m); font-size: 0.9rem;">Manage portfolio content from the comfort of your admin panel.</p>
+  </div>
+
+  <div class="admin-grid">
+    <!-- GAME DEV VIDEOS -->
+    <div class="admin-section">
+      <h2>🎮 Game Dev Videos</h2>
+      <div class="form-group">
+        <label class="form-label">Title</label>
+        <input type="text" class="form-input" id="gd-title" placeholder="e.g. DLG — Full Gameplay Demo">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Description (optional)</label>
+        <textarea class="form-input form-textarea" id="gd-desc"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Video URL</label>
+        <input type="text" class="form-input" id="gd-url" placeholder="https://youtube.com/watch?v=...">
+      </div>
+      <button class="btn-submit" onclick="addGameDevVideo()">ADD VIDEO</button>
+      <div class="content-list" id="gd-list"></div>
+    </div>
+
+    <!-- 3D MODELS -->
+    <div class="admin-section">
+      <h2>🧊 3D Models</h2>
+      <div class="form-group">
+        <label class="form-label">Model Name</label>
+        <input type="text" class="form-input" id="td-name" placeholder="e.g. Main Hero Character">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Description (optional)</label>
+        <textarea class="form-input form-textarea" id="td-desc"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">.GLB File URL</label>
+        <input type="text" class="form-input" id="td-url" placeholder="https://raw.githubusercontent.com/.../model.glb">
+      </div>
+      <button class="btn-submit" onclick="add3DModel()">ADD MODEL</button>
+      <div class="content-list" id="td-list"></div>
+    </div>
+
+    <!-- ANIMATION -->
+    <div class="admin-section">
+      <h2>🎞️ Animation Work</h2>
+      <div class="form-group">
+        <label class="form-label">Title</label>
+        <input type="text" class="form-input" id="an-title" placeholder="e.g. Character Walk Cycle">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Description (optional)</label>
+        <textarea class="form-input form-textarea" id="an-desc"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Video URL</label>
+        <input type="text" class="form-input" id="an-url" placeholder="https://youtube.com/watch?v=...">
+      </div>
+      <button class="btn-submit" onclick="addAnimationVideo()">ADD ANIMATION</button>
+      <div class="content-list" id="an-list"></div>
+    </div>
+
+    <!-- VIDEO EDITING -->
+    <div class="admin-section">
+      <h2>🎬 Video Editing</h2>
+      <div class="form-group">
+        <label class="form-label">Title</label>
+        <input type="text" class="form-input" id="ve-title" placeholder="e.g. JJK Short — Itadori Edit">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Description (optional)</label>
+        <textarea class="form-input form-textarea" id="ve-desc"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Video URL</label>
+        <input type="text" class="form-input" id="ve-url" placeholder="https://youtube.com/watch?v=...">
+      </div>
+      <button class="btn-submit" onclick="addVideoEditVideo()">ADD VIDEO</button>
+      <div class="content-list" id="ve-list"></div>
+    </div>
+
+    <!-- REVIEWS -->
+    <div class="admin-section">
+      <h2>💬 Client Reviews</h2>
+      <div class="form-group">
+        <label class="form-label">Client Name</label>
+        <input type="text" class="form-input" id="rv-name" placeholder="e.g. Alex Morgan">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Client Role / Platform</label>
+        <input type="text" class="form-input" id="rv-role" placeholder="e.g. Indie Developer · Discord">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Review Text</label>
+        <textarea class="form-input form-textarea" id="rv-text" placeholder="What did they say?"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Rating</label>
+        <div style="display: flex; gap: 0.3rem; margin-top: 0.5rem;">
+          <button class="star-btn" data-v="1" onclick="setStar(1)">★</button>
+          <button class="star-btn" data-v="2" onclick="setStar(2)">★</button>
+          <button class="star-btn" data-v="3" onclick="setStar(3)">★</button>
+          <button class="star-btn" data-v="4" onclick="setStar(4)">★</button>
+          <button class="star-btn" data-v="5" onclick="setStar(5)">★</button>
+        </div>
+      </div>
+      <button class="btn-submit" onclick="addReview()">ADD REVIEW</button>
+      <div class="content-list" id="rv-list"></div>
+    </div>
+
+    <!-- SITE DETAILS -->
+    <div class="admin-section">
+      <h2>⚙️ Site Details</h2>
+      <div class="form-group">
+        <label class="form-label">Organization Name</label>
+        <input type="text" class="form-input" id="dt-org" placeholder="GENIUS_REALMS">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Tagline</label>
+        <input type="text" class="form-input" id="dt-tag" placeholder="Reality is just another project.">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Hero Line 1</label>
+        <input type="text" class="form-input" id="dt-h1" placeholder="OMOJASOLA">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Hero Line 2</label>
+        <input type="text" class="form-input" id="dt-h2" placeholder="SOLOMON">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Full Name</label>
+        <input type="text" class="form-input" id="dt-fn" placeholder="Omojasola Solomon Oluwadamilare">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input type="email" class="form-input" id="dt-email" placeholder="your@email.com">
+      </div>
+      <div class="form-group">
+        <label class="form-label">WhatsApp (digits only with country code)</label>
+        <input type="text" class="form-input" id="dt-phone" placeholder="2348119809701">
+      </div>
+      <div class="form-group">
+        <label class="form-label">YouTube URL</label>
+        <input type="text" class="form-input" id="dt-yt" placeholder="https://www.youtube.com/@yourhandle">
+      </div>
+      <button class="btn-submit" onclick="saveDetails()">SAVE DETAILS</button>
+    </div>
+
+    <!-- DATA MANAGEMENT -->
+    <div class="admin-section">
+      <h2>📊 Data Management</h2>
+      <p style="color: var(--txt-m); font-size: 0.85rem; margin-bottom: 1rem;">Export and import your portfolio data as JSON backup.</p>
+      <button class="btn-submit" onclick="exportData()" style="margin-bottom: 0.5rem;">↓ EXPORT DATA</button>
+      <button class="btn-submit" onclick="document.getElementById('import-file').click()" style="background: transparent; color: var(--blue); border: 1px solid var(--blue); margin-bottom: 1rem;">↑ IMPORT DATA</button>
+      <input type="file" id="import-file" accept=".json" style="display: none;" onchange="importData(event)">
+      <hr style="border: none; border-top: 1px solid var(--bdr); margin: 1rem 0;">
+      <label class="form-label">New Password</label>
+      <input type="password" class="form-input" id="new-pw" placeholder="New password" style="margin-bottom: 0.5rem;">
+      <label class="form-label">Confirm Password</label>
+      <input type="password" class="form-input" id="confirm-pw" placeholder="Confirm password" style="margin-bottom: 1rem;">
+      <button class="btn-submit" onclick="changePw()">UPDATE PASSWORD</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Dummy functions - replace with actual API calls
+  const API_BASE = '';
+  const getAuthToken = () => sessionStorage.getItem('gr_adm_pw');
+
+  function addGameDevVideo() { alert('Add game dev video - implement API call'); }
+  function add3DModel() { alert('Add 3D model - implement API call'); }
+  function addAnimationVideo() { alert('Add animation - implement API call'); }
+  function addVideoEditVideo() { alert('Add video editing - implement API call'); }
+  function addReview() { alert('Add review - implement API call'); }
+  function saveDetails() { alert('Save details - implement API call'); }
+  function exportData() { alert('Export data - implement API call'); }
+  function importData(e) { alert('Import data - implement API call'); }
+  function changePw() { alert('Change password - implement API call'); }
+  function logout() { 
+    sessionStorage.removeItem('gr_adm_pw');
+    window.location.href = '/';
+  }
+
+  let curStar = 5;
+  function setStar(v) {
+    curStar = v;
+    document.querySelectorAll('.star-btn').forEach(b => b.classList.toggle('on', parseInt(b.dataset.v) <= v));
+  }
+  setStar(5);
+</script>
+
+</body>
+</html>

@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>404 Page Not Found // GENIUS_REALMS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #030508;
+      --bg2: #060c12;
+      --bg3: #0a1420;
+      --blue: #00aaff;
+      --blue-dim: #0077bb;
+      --blue-dk: #002244;
+      --glow: rgba(0, 170, 255, .22);
+      --glow-hi: rgba(0, 170, 255, .5);
+      --bdr: rgba(0, 170, 255, .18);
+      --bdr-dk: rgba(0, 170, 255, .06);
+      --txt: #d0e8ff;
+      --txt-m: #4477aa;
+      --txt-d: #1e3a55;
+      --mono: 'Share Tech Mono', monospace;
+      --disp: 'Orbitron', sans-serif;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--txt);
+      font-family: var(--mono);
+      overflow-x: hidden;
+      cursor: crosshair;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 2rem;
+    }
+
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 0, 0, .04) 2px, rgba(0, 0, 0, .04) 4px);
+      pointer-events: none;
+      z-index: 9998;
+    }
+
+    ::-webkit-scrollbar {
+      width: 5px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: var(--bg);
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--blue-dk);
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--blue);
+    }
+
+    .error-container {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      max-width: 800px;
+    }
+
+    .error-code {
+      font-family: var(--disp);
+      font-size: clamp(4rem, 12vw, 8rem);
+      font-weight: 900;
+      background: linear-gradient(135deg, var(--blue), var(--blue-dim));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-shadow: 0 0 40px var(--glow);
+      letter-spacing: 0.15em;
+      margin-bottom: 1rem;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    .error-title {
+      font-family: var(--disp);
+      font-size: clamp(1.8rem, 4vw, 2.8rem);
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      line-height: 1.2;
+      margin-bottom: 1rem;
+    }
+
+    .error-title .highlight {
+      color: var(--blue);
+      text-shadow: 0 0 28px var(--blue);
+    }
+
+    .error-description {
+      font-size: 1.1rem;
+      color: var(--txt-m);
+      line-height: 1.8;
+      margin-bottom: 2rem;
+      max-width: 600px;
+    }
+
+    .error-description::before {
+      content: '// ';
+      color: var(--blue);
+      margin-right: 0.5rem;
+    }
+
+    .error-details {
+      background: var(--bg2);
+      border: 1px solid var(--bdr);
+      box-shadow: 0 0 30px var(--glow);
+      padding: 2rem;
+      margin-bottom: 2rem;
+      border-radius: 4px;
+    }
+
+    .error-details p {
+      font-size: 0.95rem;
+      color: var(--txt-d);
+      margin-bottom: 0.8rem;
+      font-family: var(--mono);
+    }
+
+    .error-details p:last-child {
+      margin-bottom: 0;
+    }
+
+    .error-text {
+      color: var(--blue);
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 1.5rem;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 3rem;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.9rem 2rem;
+      font-family: var(--mono);
+      font-size: 0.9rem;
+      letter-spacing: 0.1em;
+      cursor: pointer;
+      border: none;
+      text-decoration: none;
+      text-transform: uppercase;
+      transition: all 0.3s;
+      border-radius: 2px;
+    }
+
+    .btn-primary {
+      background: var(--blue);
+      color: #000;
+    }
+
+    .btn-primary:hover {
+      background: #fff;
+      box-shadow: 0 0 24px var(--glow-hi);
+      transform: translateY(-2px);
+    }
+
+    .btn-secondary {
+      background: transparent;
+      color: var(--blue);
+      border: 1px solid var(--blue);
+    }
+
+    .btn-secondary:hover {
+      background: var(--blue);
+      color: #000;
+      box-shadow: 0 0 24px var(--glow-hi);
+      transform: translateY(-2px);
+    }
+
+    .nav-bar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 58px;
+      display: flex;
+      align-items: center;
+      padding: 0 2rem;
+      background: rgba(3, 5, 8, 0.93);
+      border-bottom: 1px solid var(--bdr);
+      backdrop-filter: blur(12px);
+      z-index: 1000;
+    }
+
+    .nav-logo {
+      font-family: var(--disp);
+      font-size: 0.88rem;
+      font-weight: 900;
+      color: var(--blue);
+      text-decoration: none;
+      letter-spacing: 0.18em;
+      text-shadow: 0 0 16px var(--blue);
+    }
+
+    .nav-logo span {
+      color: var(--txt);
+    }
+
+    .glitch-text {
+      position: relative;
+      display: inline-block;
+    }
+
+    .glitch-text::before,
+    .glitch-text::after {
+      content: attr(data-glitch);
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;;
+      opacity: 0;
+    }
+
+    .glitch-text::before {
+      animation: glitch-1 0.3s infinite;
+      color: var(--blue);
+      z-index: -1;
+      text-shadow: -2px 0 var(--blue-dim);
+    }
+
+    .glitch-text::after {
+      animation: glitch-2 0.3s infinite;
+      color: var(--blue-dim);
+      z-index: -2;
+      text-shadow: 2px 0 var(--blue);
+    }
+
+    @keyframes pulse {
+      0%, 100% {
+        opacity: 0.8;
+        text-shadow: 0 0 20px var(--glow);
+      }
+
+      50% {
+        opacity: 1;
+        text-shadow: 0 0 40px var(--glow-hi);
+      }
+    }
+
+    @keyframes glitch-1 {
+      0% {
+        clip-path: polygon(0 20%, 100% 20%, 100% 21%, 0 21%);
+        transform: translate(0);
+      }
+
+      20% {
+        clip-path: polygon(0 60%, 100% 60%, 100% 61%, 0 61%);
+        transform: translate(-2px, 2px);
+      }
+
+      40% {
+        clip-path: polygon(0 50%, 100% 50%, 100% 58%, 0 58%);
+        transform: translate(-2px, -2px);
+      }
+
+      60% {
+        clip-path: polygon(0 10%, 100% 10%, 100% 30%, 0 30%);
+        transform: translate(2px, 2px);
+      }
+
+      80% {
+        clip-path: polygon(0 85%, 100% 85%, 100% 89%, 0 89%);
+        transform: translate(2px, -2px);
+      }
+
+      100% {
+        clip-path: polygon(0 20%, 100% 20%, 100% 21%, 0 21%);
+        transform: translate(0);
+      }
+    }
+
+    @keyframes glitch-2 {
+      0% {
+        clip-path: polygon(0 25%, 100% 25%, 100% 26%, 0 26%);
+        transform: translate(0);
+      }
+
+      20% {
+        clip-path: polygon(0 58%, 100% 58%, 100% 60%, 0 60%);
+        transform: translate(2px, -2px);
+      }
+
+      40% {
+        clip-path: polygon(0 30%, 100% 30%, 100% 40%, 0 40%);
+        transform: translate(2px, 2px);
+      }
+
+      60% {
+        clip-path: polygon(0 88%, 100% 88%, 100% 92%, 0 92%);
+        transform: translate(-2px, -2px);
+      }
+
+      80% {
+        clip-path: polygon(0 5%, 100% 5%, 100% 20%, 0 20%);
+        transform: translate(-2px, 2px);
+      }
+
+      100% {
+        clip-path: polygon(0 25%, 100% 25%, 100% 26%, 0 26%);
+        transform: translate(0);
+      }
+    }
+
+    @media (max-width: 768px) {
+      .action-buttons {
+        flex-direction: column;
+        gap: 1rem;
+      }
+
+      .btn {
+        width: 100%;
+        justify-content: center;
+      }
+
+      .error-details {
+        padding: 1.5rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<nav class="nav-bar">
+  <a href="/" class="nav-logo">GENIUS<span>_</span>REALMS</a>
+</nav>
+
+<div class="error-container" style="margin-top: 60px;">
+  <div class="error-code" data-glitch="404">404</div>
+
+  <h1 class="error-title">
+    PAGE <span class="highlight">NOT_FOUND</span>
+  </h1>
+
+  <p class="error-description">
+    The resource you're looking for doesn't exist in this reality. Maybe it's in another dimension?
+  </p>
+
+  <div class="error-details">
+    <p><span class="error-text">ERROR_CODE:</span> 404_NOT_FOUND</p>
+    <p><span class="error-text">STATUS:</span> Resource unavailable</p>
+    <p><span class="error-text">PATH:</span> <script>document.write(window.location.pathname)</script></p>
+    <p><span class="error-text">ACTION:</span> Return to known space or navigate below</p>
+  </div>
+
+  <div class="action-buttons">
+    <a href="/" class="btn btn-primary">← RETURN HOME</a>
+    <a href="/#hireme" class="btn btn-secondary">HIRE ME →</a>
+  </div>
+
+  <div style="margin-top: 2rem; color: var(--txt-d); font-size: 0.85rem;">
+    <p>Need help? Contact us at <a href="mailto:geniusomojasola@gmail.com" style="color: var(--blue); text-decoration: none;">geniusomojasola@gmail.com</a></p>
+  </div>
+</div>
+
+</body>
+</html>
