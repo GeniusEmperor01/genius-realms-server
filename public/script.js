@@ -1,4 +1,86 @@
-/* ===== 3D VIEWER INITIALIZATION ===== */
+/* ===== COMPREHENSIVE ANALYTICS TRACKING ===== */
+let sessionData = {
+  sessionId: null,
+  startTime: Date.now(),
+  lastUpdate: Date.now(),
+  maxScrollDepth: 0,
+  eventsTracked: []
+};
+
+// Generate session ID
+sessionData.sessionId = 'sess_' + Math.random().toString(36).substring(2, 11);
+
+// Track scroll depth
+window.addEventListener('scroll', () => {
+  const scroll = (window.innerHeight + window.pageYOffset) / document.body.offsetHeight;
+  const depth = Math.round(scroll * 100);
+  if (depth > sessionData.maxScrollDepth) {
+    sessionData.maxScrollDepth = depth;
+  }
+});
+
+// Track time before close
+window.addEventListener('beforeunload', () => {
+  const sessionDuration = (Date.now() - sessionData.startTime) / 1000;
+  if (sessionDuration > 5) { // Only track if user stayed more than 5 seconds
+    fetch('/api/analytics/track', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        eventType: 'session_end',
+        sessionId: sessionData.sessionId,
+        pageScrollDepth: sessionData.maxScrollDepth,
+        sessionDuration: Math.round(sessionDuration)
+      }),
+      keepalive: true
+    });
+  }
+});
+
+// Track section views
+function trackSectionView(section) {
+  fetch('/api/analytics/track', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      eventType: 'section_view',
+      section: section,
+      sessionId: sessionData.sessionId
+    })
+  }).catch(e => console.log('Analytics track error:', e));
+}
+
+// Track clicks
+document.addEventListener('click', (e) => {
+  const target = e.target.closest('[data-tracking]');
+  if (target) {
+    fetch('/api/analytics/track', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        eventType: 'click',
+        clickTarget: target.getAttribute('data-tracking'),
+        clickSection: target.getAttribute('data-section'),
+        sessionId: sessionData.sessionId
+      })
+    }).catch(e => console.log('Analytics track error:', e));
+  }
+});
+
+// Track model views
+const originalLoadModel = window._loadModel;
+window._loadModel = function(url, name) {
+  fetch('/api/analytics/track', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      eventType: 'model_view',
+      modelTitle: name,
+      sessionId: sessionData.sessionId
+    })
+  }).catch(e => console.log('Analytics track error:', e));
+  return originalLoadModel.call(this, url, name);
+};
 import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
 import {GLTFLoader} from 'https://unpkg.com/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
 import {OrbitControls} from 'https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js';
@@ -291,7 +373,7 @@ function renderVids(sec, items) {
       <div class="vinfo"><div class="vtitle">${item.title}</div>${item.desc ? `<div class="vdesc">${item.desc}</div>` : ''}</div>
       <div class="adel-wrap"><button class="adel-btn" onclick="delItem('video','${item._id}','${sec}');event.stopPropagation()">✕ DEL</button></div>`;
     
-    card.addEventListener('click', () => openVid(item.title, item.desc, p.embed, p.kind));
+    card.addEventListener('click', () => openVid(item.title, item.desc, p.embed, p.kind, item._id, sec));
     grid.insertBefore(card, grid.querySelector('.adm-add'));
   });
 }
@@ -342,19 +424,90 @@ function renderReviews(items) {
   });
 }
 
+/* ===== VIDEO ANALYTICS ===== */
+let videoAnalytics = {
+  videoId: null,
+  videoTitle: null,
+  section: null,
+  startTime: null,
+  startTimeUnix: null,
+  videoElement: null,
+  totalDuration: 0,
+  lastTrackedTime: 0
+};
+
+async function trackVideoAnalytics() {
+  if (!videoAnalytics.videoId || !videoAnalytics.startTime) return;
+  
+  const watchDuration = (videoAnalytics.videoElement?.currentTime || videoAnalytics.lastTrackedTime) - videoAnalytics.lastTrackedTime;
+  const completionPercent = videoAnalytics.totalDuration > 0 
+    ? Math.round(((videoAnalytics.videoElement?.currentTime || 0) / videoAnalytics.totalDuration) * 100)
+    : 0;
+  
+  try {
+    await fetch('/api/analytics/track', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        videoId: videoAnalytics.videoId,
+        videoTitle: videoAnalytics.videoTitle,
+        section: videoAnalytics.section,
+        playStartTime: videoAnalytics.startTime,
+        playEndTime: new Date(),
+        watchDuration: videoAnalytics.videoElement?.currentTime || 0,
+        totalDuration: videoAnalytics.totalDuration,
+        completionPercent: completionPercent
+      })
+    });
+  } catch (e) {
+    console.error('Failed to track video analytics:', e);
+  }
+}
+
 /* ===== VIDEO MODAL ===== */
-function openVid(title, desc, embed, kind) {
+function openVid(title, desc, embed, kind, videoId, section) {
   document.getElementById('mod-title').textContent = title.toUpperCase();
   document.getElementById('mod-desc').textContent = desc || '';
-  document.getElementById('mod-embed').innerHTML = kind === 'direct'
-    ? `<video controls autoplay style="width:100%;height:100%"><source src="${embed}"></video>`
+  
+  videoAnalytics.videoId = videoId;
+  videoAnalytics.videoTitle = title;
+  videoAnalytics.section = section;
+  videoAnalytics.startTime = new Date();
+  videoAnalytics.startTimeUnix = Date.now();
+  videoAnalytics.lastTrackedTime = 0;
+  
+  const embedContainer = document.getElementById('mod-embed');
+  embedContainer.innerHTML = kind === 'direct'
+    ? `<video controls autoplay><source src="${embed}"></video>`
     : `<iframe src="${embed}" allowfullscreen allow="autoplay;encrypted-media"></iframe>`;
+  
+  if (kind === 'direct') {
+    videoAnalytics.videoElement = embedContainer.querySelector('video');
+    if (videoAnalytics.videoElement) {
+      videoAnalytics.videoElement.addEventListener('loadedmetadata', () => {
+        videoAnalytics.totalDuration = videoAnalytics.videoElement.duration || 0;
+      });
+      // Track video time periodically
+      videoAnalytics.videoElement.addEventListener('timeupdate', () => {
+        videoAnalytics.lastTrackedTime = videoAnalytics.videoElement.currentTime;
+      });
+    }
+  } else {
+    videoAnalytics.videoElement = null;
+    videoAnalytics.totalDuration = 0;
+  }
+  
   document.getElementById('vid-modal').classList.add('open');
 }
 
 window.closeVid = () => {
+  // Track final analytics before closing
+  trackVideoAnalytics();
+  
   document.getElementById('vid-modal').classList.remove('open');
   document.getElementById('mod-embed').innerHTML = '';
+  videoAnalytics.videoId = null;
+  videoAnalytics.videoElement = null;
 };
 
 document.getElementById('vid-modal').addEventListener('click', e => {
@@ -435,11 +588,12 @@ window.openAdminTo = tab => {
 
 /* ===== ADMIN TABS ===== */
 window.apTab = tab => {
-  const tabs = ['gamedev', 'threed', 'animation', 'video', 'reviews', 'details', 'data'];
+  const tabs = ['gamedev', 'threed', 'animation', 'video', 'reviews', 'details', 'analytics', 'data'];
   document.querySelectorAll('.ap-tab').forEach((t, i) => t.classList.toggle('on', tabs[i] === tab));
   document.querySelectorAll('.ap-sec').forEach(s => s.classList.remove('on'));
   document.getElementById('ap-' + tab).classList.add('on');
   if (tab === 'details') loadAll();
+  if (tab === 'analytics') loadAnalytics();
 };
 
 /* ===== ADD ITEMS ===== */
@@ -530,6 +684,63 @@ addEventListener('keydown', e => {
     window.closePw();
   }
 });
+
+/* ===== LOAD ANALYTICS ===== */
+window.loadAnalytics = async () => {
+  if (!isAdm) return;
+  
+  const days = document.getElementById('analytics-days')?.value || 30;
+  const section = document.getElementById('analytics-section')?.value || '';
+  
+  try {
+    const params = new URLSearchParams({ days });
+    if (section) params.append('section', section);
+    
+    const res = await fetch('/api/analytics?' + params.toString(), {
+      headers: { 'x-admin-password': getAdmPw() }
+    });
+    const data = await res.json();
+    
+    // Update stats
+    document.getElementById('stat-plays').textContent = data.totalPlays || 0;
+    document.getElementById('stat-avgwatch').textContent = formatSeconds(data.avgWatchDuration || 0);
+    document.getElementById('stat-avgcomp').textContent = Math.round(data.avgCompletion || 0) + '%';
+    
+    // Render by video
+    const byVideoEl = document.getElementById('analytics-by-video');
+    byVideoEl.innerHTML = '';
+    
+    Object.entries(data.byVideo || {}).forEach(([title, stats]) => {
+      const div = document.createElement('div');
+      div.style.cssText = 'margin-bottom:.6rem;padding:.5rem;background:var(--bg3);border:1px solid rgba(74,158,255,.08)';
+      div.innerHTML = `
+        <div style="color:var(--txt);margin-bottom:.3rem;font-weight:bold">${escapeHtml(title)}</div>
+        <div>Plays: <span style="color:var(--blue)">${stats.plays}</span></div>
+        <div>Avg Watch: <span style="color:var(--blue)">${formatSeconds(stats.avgWatch)}</span></div>
+        <div>Completion: <span style="color:var(--blue)">${Math.round(stats.avgCompletion)}%</span></div>
+      `;
+      byVideoEl.appendChild(div);
+    });
+    
+    if (Object.keys(data.byVideo || {}).length === 0) {
+      byVideoEl.innerHTML = '<div style="color:var(--txt-d);text-align:center;padding:1rem">No analytics data yet</div>';
+    }
+  } catch (e) {
+    console.error('Failed to load analytics:', e);
+  }
+};
+
+function formatSeconds(seconds) {
+  if (!seconds || seconds < 60) return Math.round(seconds) + 's';
+  const mins = Math.round(seconds / 60);
+  if (mins < 60) return mins + 'm';
+  return Math.round(mins / 60) + 'h';
+}
+
+function escapeHtml(text) {
+  const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+  return text.replace(/[&<>"']/g, m => map[m]);
+}
 
 /* ===== MOBILE NAV ===== */
 window.toggleMobileNav = () => {

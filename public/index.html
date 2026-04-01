@@ -286,6 +286,7 @@
     <button class="ap-tab" onclick="apTab('video')">VIDEO</button>
     <button class="ap-tab" onclick="apTab('reviews')">REVIEWS</button>
     <button class="ap-tab" onclick="apTab('details')">DETAILS</button>
+    <button class="ap-tab" onclick="apTab('analytics')">ANALYTICS</button>
     <button class="ap-tab" onclick="apTab('data')">DATA</button>
   </div>
   <div class="ap-body">
@@ -352,6 +353,36 @@
       <div class="ap-grp"><label class="ap-lbl">YouTube URL</label><input type="text" class="ap-in" id="dt-yt" placeholder="https://www.youtube.com/@geniusrealms"></div>
       <button class="ap-submit" onclick="saveDetails()">SAVE DETAILS</button>
       <div class="ap-msg" id="dt-msg"></div>
+    </div>
+    <div class="ap-sec" id="ap-analytics">
+      <p class="ap-hint">Video engagement analytics — track plays, watch time, and completion rates.</p>
+      <div class="ap-grp">
+        <label class="ap-lbl">Filter by Days</label>
+        <select class="ap-sel" id="analytics-days" onchange="loadAnalytics()">
+          <option value="7">Last 7 days</option>
+          <option value="30" selected>Last 30 days</option>
+          <option value="90">Last 90 days</option>
+          <option value="365">Last year</option>
+        </select>
+      </div>
+      <div class="ap-grp">
+        <label class="ap-lbl">Filter by Section</label>
+        <select class="ap-sel" id="analytics-section" onchange="loadAnalytics()">
+          <option value="">All sections</option>
+          <option value="gamedev">🎮 Game Dev</option>
+          <option value="animation">🎞️ Animation</option>
+          <option value="video">🎬 Video Editing</option>
+        </select>
+      </div>
+      <hr class="ap-rule">
+      <div id="analytics-stats" style="font-size:.75rem;color:var(--txt-m);line-height:2">
+        <div>Total Plays: <span id="stat-plays" style="color:var(--blue)">0</span></div>
+        <div>Avg Watch Time: <span id="stat-avgwatch" style="color:var(--blue)">0m</span></div>
+        <div>Avg Completion: <span id="stat-avgcomp" style="color:var(--blue)">0%</span></div>
+      </div>
+      <hr class="ap-rule">
+      <p class="ap-hint">// by video</p>
+      <div id="analytics-by-video" style="font-size:.68rem;max-height:300px;overflow-y:auto"></div>
     </div>
     <div class="ap-sec" id="ap-data">
       <p class="ap-hint">Export all site content as JSON backup. Import to restore on any device.</p>

@@ -3,248 +3,592 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ADMIN CONSOLE // GENIUS_REALMS</title>
+  <title>GENIUS_REALMS // ADMIN</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
   <style>
-    body { display: flex; flex-direction: column; }
-    .admin-container { max-width: 1200px; margin: 0 auto; padding: 2rem; width: 100%; }
-    .admin-header { margin-bottom: 2rem; }
-    .admin-header h1 { font-family: var(--disp); font-size: 2rem; color: var(--blue); margin-bottom: 0.5rem; }
-    .admin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
-    .admin-section { background: var(--bg2); border: 1px solid var(--bdr); padding: 1.5rem; }
-    .admin-section h2 { font-family: var(--disp); font-size: 1.2rem; color: var(--blue); margin-bottom: 1rem; }
-    .form-group { margin-bottom: 1rem; }
-    .form-label { display: block; font-size: 0.8rem; color: var(--txt-m); margin-bottom: 0.3rem; text-transform: uppercase; letter-spacing: 0.1em; }
-    .form-input { width: 100%; background: var(--bg3); border: 1px solid var(--bdr); color: var(--txt); padding: 0.6rem; font-family: var(--mono); outline: none; }
-    .form-input:focus { border-color: var(--blue); box-shadow: 0 0 8px var(--glow); }
-    .form-textarea { resize: vertical; min-height: 100px; }
-    .btn-submit { background: var(--blue); color: #000; border: none; padding: 0.8rem 1.5rem; cursor: pointer; font-family: var(--mono); font-weight: bold; text-transform: uppercase; width: 100%; }
-    .btn-submit:hover { background: #fff; }
-    .content-list { display: flex; flex-direction: column; gap: 0.8rem; margin-top: 1rem; }
-    .content-item { background: var(--bg3); border: 1px solid rgba(0,170,255,.1); padding: 0.8rem; display: flex; justify-content: space-between; align-items: center; }
-    .content-item-text { flex: 1; }
-    .content-item .btn-delete { background: transparent; border: 1px solid var(--blue); color: var(--blue); padding: 0.3rem 0.8rem; cursor: pointer; font-size: 0.7rem; }
-    .content-item .btn-delete:hover { background: var(--blue); color: #000; }
-    .logout-btn { background: transparent; border: 1px solid var(--blue); color: var(--blue); padding: 0.5rem 1rem; cursor: pointer; }
-    .logout-btn:hover { background: var(--blue); color: #000; }
-    @media(max-width: 768px) {
-      .admin-grid { grid-template-columns: 1fr; }
+    :root {
+      --bg:#0f1419; --bg2:#14191f; --bg3:#1a212d;
+      --blue:#4a9eff; --blue-dim:#3a7fb8;
+      --glow:rgba(74,158,255,.08); --bdr:rgba(74,158,255,.12);
+      --txt:#c5d3e5; --txt-m:#7a92b4; --txt-d:#5a6f8a;
+      --mono:'Share Tech Mono',monospace; --disp:'Orbitron',sans-serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--txt); font-family: var(--mono); overflow-x: hidden; }
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--blue-dim); }
+    ::-webkit-scrollbar-thumb:hover { background: var(--blue); }
+
+    .container { display: flex; min-height: 100vh; }
+    
+     /* SIDEBAR */
+    .sidebar { width: 280px; background: var(--bg2); border-right: 1px solid var(--bdr); padding: 2rem 0; overflow-y: auto; position: sticky; top: 0; height: 100vh; }
+    .sidebar-logo { padding: 0 1.5rem 2rem; font-family: var(--disp); font-size: 1.1rem; font-weight: 900; color: var(--blue); letter-spacing: .15em; text-decoration: none; display: block; border-bottom: 1px solid var(--bdr); margin-bottom: 1.5rem; }
+    .sidebar-logo span { color: var(--txt); }
+    .sidebar-nav { display: flex; flex-direction: column; }
+    .sidebar-item { padding: 1rem 1.5rem; color: var(--txt-m); cursor: pointer; transition: all .2s; border-left: 3px solid transparent; display: flex; align-items: center; gap: .8rem; }
+    .sidebar-item:hover { color: var(--blue); background: rgba(74,158,255,.05); }
+    .sidebar-item.active { color: var(--blue); background: rgba(74,158,255,.1); border-left-color: var(--blue); }
+    .sidebar-item .icon { font-size: 1.2rem; min-width: 20px; }
+    
+    /* MAIN CONTENT */
+    .main { flex: 1; overflow-y: auto; }
+    .top-bar { background: var(--bg2); padding: 1.2rem 2rem; border-bottom: 1px solid var(--bdr); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; }
+    .top-bar-title { font-family: var(--disp); font-size: 1.3rem; font-weight: 900; color: var(--txt); }
+    .top-bar-actions { display: flex; gap: 1rem; }
+    .btn { padding: .6rem 1.2rem; background: var(--blue); color: #000; border: none; font-family: var(--mono); font-size: .75rem; cursor: pointer; letter-spacing: .1em; transition: all .2s; text-transform: uppercase; }
+    .btn:hover { background: #fff; }
+    .btn-sec { background: transparent; border: 1px solid var(--blue); color: var(--blue); }
+    .btn-sec:hover { background: var(--blue); color: #000; }
+    
+    .content { padding: 2rem; }
+    
+    /* SECTIONS */
+    .section { display: none; }
+    .section.active { display: block; }
+    
+    /* TABS */
+    .tabs { display: flex; gap: .5rem; margin-bottom: 2rem; border-bottom: 1px solid var(--bdr); }
+    .tab { padding: .7rem 1.2rem; background: transparent; border: none; color: var(--txt-m); cursor: pointer; font-family: var(--mono); font-size: .75rem; border-bottom: 2px solid transparent; transition: all .2s; text-transform: uppercase; letter-spacing: .05em; }
+    .tab:hover { color: var(--blue); }
+    .tab.active { color: var(--blue); border-bottom-color: var(--blue); }
+    
+    /* FORMS */
+    .form-group { margin-bottom: 1.2rem; }
+    .form-label { display: block; font-size: .7rem; color: var(--txt-m); letter-spacing: .1em; margin-bottom: .5rem; text-transform: uppercase; }
+    .form-input, .form-textarea, .form-select { width: 100%; background: var(--bg3); border: 1px solid var(--bdr); color: var(--txt); font-family: var(--mono); font-size: .85rem; padding: .7rem; outline: none; }
+    .form-input:focus, .form-textarea:focus, .form-select:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(74,158,255,.1); }
+    .form-textarea { resize: vertical; min-height: 80px; }
+    
+    /* ANALYTICS DASHBOARD */
+    .analytics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; }
+    .stat-card { background: linear-gradient(135deg, var(--bg2) 0%, var(--bg3) 100%); border: 1px solid var(--bdr); padding: 1.5rem; }
+    .stat-icon { font-size: 1.8rem; margin-bottom: .5rem; }
+    .stat-value { font-size: 2.2rem; font-weight: 900; color: var(--blue); margin-bottom: .3rem; }
+    .stat-label { font-size: .7rem; color: var(--txt-m); letter-spacing: .1em; text-transform: uppercase; }
+    
+    /* BREAKDOWNS */
+    .breakdown { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 2rem; }
+    .breakdown-chart { background: var(--bg3); border: 1px solid var(--bdr); padding: 1.5rem; }
+    .breakdown-title { font-family: var(--disp); font-size: .85rem; font-weight: 700; color: var(--blue); margin-bottom: 1rem; letter-spacing: .1em; text-transform: uppercase; }
+    .breakdown-item { display: flex; justify-content: space-between; align-items: center; margin-bottom: .8rem; font-size: .8rem; }
+    .breakdown-label { color: var(--txt-m); }
+    .breakdown-bar { flex: 1; height: 6px; background: var(--bg2); margin: 0 1rem; overflow: hidden; }
+    .breakdown-fill { height: 100%; background: var(--blue); }
+    .breakdown-value { color: var(--blue); font-weight: bold; min-width: 50px; text-align: right; }
+    
+    /* CONTENT LISTS */
+    .content-list { margin-top: 2rem; }
+    .content-item { background: var(--bg3); border: 1px solid var(--bdr); padding: 1rem; margin-bottom: .8rem; display: grid; grid-template-columns: 1fr 100px 100px 100px; gap: 1rem; align-items: center; }
+    .content-title { color: var(--txt); font-size: .85rem; }
+    .content-stat { text-align: right; }
+    .content-stat-val { color: var(--blue); font-weight: bold; font-size: .9rem; }
+    .content-stat-lbl { font-size: .7rem; color: var(--txt-d); }
+    
+    /* FILTERS */
+    .filters { display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap; }
+    .filter-group { display: flex; flex-direction: column; gap: .3rem; }
+    .filter-label { font-size: .7rem; color: var(--txt-m); letter-spacing: .1em; text-transform: uppercase; }
+    .filter-select { background: var(--bg3); border: 1px solid var(--bdr); color: var(--txt); font-family: var(--mono); font-size: .8rem; padding: .5rem .8rem; outline: none; }
+    .filter-select:focus { border-color: var(--blue); }
+    
+    /* RESPONSIVE */
+    @media (max-width: 768px) {
+      .container { flex-direction: column; }
+      .sidebar { width: 100%; border-right: none; border-bottom: 1px solid var(--bdr); display: flex; overflow-y: visible; padding: .5rem 0; height: auto; }
+      .sidebar-nav { flex-direction: row; }
+      .sidebar-item { flex: 1; padding: .7rem .5rem; border-left: none; border-bottom: 2px solid transparent; }
+      .sidebar-item.active { border-bottom-color: var(--blue); }
+      .analytics-grid, .breakdown { grid-template-columns: 1fr; }
+      .content-item { grid-template-columns: 1fr; }
     }
   </style>
-  <!-- Google tag (gtag.js) -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-ZVJ4KTTKVP"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-
-    gtag('config', 'G-ZVJ4KTTKVP');
-  </script>
 </head>
 <body>
 
-<nav id="nav" style="margin-bottom: 2rem;">
-  <a href="/" class="nav-logo">GENIUS<span>_</span>REALMS</a>
-  <div class="nav-right">
-    <button class="logout-btn" onclick="logout()">[ LOGOUT ]</button>
+<div class="container">
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <a href="/" class="sidebar-logo">GENIUS<span>_</span>REALMS</a>
+    <div class="sidebar-nav">
+      <div class="sidebar-item active" onclick="switchSection('analytics')">
+        <span class="icon">📊</span> Analytics
+      </div>
+      <div class="sidebar-item" onclick="switchSection('content')">
+        <span class="icon">📝</span> Content
+      </div>
+      <div class="sidebar-item" onclick="switchSection('details')">
+        <span class="icon">⚙️</span> Details
+      </div>
+      <div class="sidebar-item" onclick="switchSection('data')">
+        <span class="icon">💾</span> Data
+      </div>
+    </div>
   </div>
-</nav>
 
-<div class="admin-container">
-  <div class="admin-header">
-    <h1>⚡ ADMIN CONSOLE</h1>
-    <p style="color: var(--txt-m); font-size: 0.9rem;">Manage portfolio content from the comfort of your admin panel.</p>
-  </div>
-
-  <div class="admin-grid">
-    <!-- GAME DEV VIDEOS -->
-    <div class="admin-section">
-      <h2>🎮 Game Dev Videos</h2>
-      <div class="form-group">
-        <label class="form-label">Title</label>
-        <input type="text" class="form-input" id="gd-title" placeholder="e.g. DLG — Full Gameplay Demo">
+  <!-- MAIN -->
+  <div class="main">
+    <!-- TOP BAR -->
+    <div class="top-bar">
+      <div class="top-bar-title" id="section-title">ANALYTICS</div>
+      <div class="top-bar-actions">
+        <a href="/" class="btn btn-sec">← Back to Site</a>
+        <button class="btn btn-sec" onclick="logout()">Logout</button>
       </div>
-      <div class="form-group">
-        <label class="form-label">Description (optional)</label>
-        <textarea class="form-input form-textarea" id="gd-desc"></textarea>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Video URL</label>
-        <input type="text" class="form-input" id="gd-url" placeholder="https://youtube.com/watch?v=...">
-      </div>
-      <button class="btn-submit" onclick="addGameDevVideo()">ADD VIDEO</button>
-      <div class="content-list" id="gd-list"></div>
     </div>
 
-    <!-- 3D MODELS -->
-    <div class="admin-section">
-      <h2>🧊 3D Models</h2>
-      <div class="form-group">
-        <label class="form-label">Model Name</label>
-        <input type="text" class="form-input" id="td-name" placeholder="e.g. Main Hero Character">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Description (optional)</label>
-        <textarea class="form-input form-textarea" id="td-desc"></textarea>
-      </div>
-      <div class="form-group">
-        <label class="form-label">.GLB File URL</label>
-        <input type="text" class="form-input" id="td-url" placeholder="https://raw.githubusercontent.com/.../model.glb">
-      </div>
-      <button class="btn-submit" onclick="add3DModel()">ADD MODEL</button>
-      <div class="content-list" id="td-list"></div>
-    </div>
+    <!-- CONTENT -->
+    <div class="content">
+      <!-- ANALYTICS SECTION -->
+      <div id="analytics" class="section active">
+        <div class="filters">
+          <div class="filter-group">
+            <label class="filter-label">Time Period</label>
+            <select class="filter-select" id="analytics-days" onchange="loadAnalytics()">
+              <option value="7">Last 7 days</option>
+              <option value="30" selected>Last 30 days</option>
+              <option value="90">Last 90 days</option>
+              <option value="365">Last year</option>
+            </select>
+          </div>
+        </div>
 
-    <!-- ANIMATION -->
-    <div class="admin-section">
-      <h2>🎞️ Animation Work</h2>
-      <div class="form-group">
-        <label class="form-label">Title</label>
-        <input type="text" class="form-input" id="an-title" placeholder="e.g. Character Walk Cycle">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Description (optional)</label>
-        <textarea class="form-input form-textarea" id="an-desc"></textarea>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Video URL</label>
-        <input type="text" class="form-input" id="an-url" placeholder="https://youtube.com/watch?v=...">
-      </div>
-      <button class="btn-submit" onclick="addAnimationVideo()">ADD ANIMATION</button>
-      <div class="content-list" id="an-list"></div>
-    </div>
+        <!-- MAIN STATS -->
+        <div class="analytics-grid">
+          <div class="stat-card">
+            <div class="stat-icon">👥</div>
+            <div class="stat-value" id="stat-sessions">0</div>
+            <div class="stat-label">Unique Sessions</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">🎯</div>
+            <div class="stat-value" id="stat-events">0</div>
+            <div class="stat-label">Total Events</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">⏱️</div>
+            <div class="stat-value" id="stat-avgwatch">0s</div>
+            <div class="stat-label">Avg Watch Time</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">✅</div>
+            <div class="stat-value" id="stat-avgcomp">0%</div>
+            <div class="stat-label">Avg Completion</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">📄</div>
+            <div class="stat-value" id="stat-avgscroll">0%</div>
+            <div class="stat-label">Avg Scroll Depth</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">📊</div>
+            <div class="stat-value" id="stat-eventtype">0</div>
+            <div class="stat-label">Event Types</div>
+          </div>
+        </div>
 
-    <!-- VIDEO EDITING -->
-    <div class="admin-section">
-      <h2>🎬 Video Editing</h2>
-      <div class="form-group">
-        <label class="form-label">Title</label>
-        <input type="text" class="form-input" id="ve-title" placeholder="e.g. JJK Short — Itadori Edit">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Description (optional)</label>
-        <textarea class="form-input form-textarea" id="ve-desc"></textarea>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Video URL</label>
-        <input type="text" class="form-input" id="ve-url" placeholder="https://youtube.com/watch?v=...">
-      </div>
-      <button class="btn-submit" onclick="addVideoEditVideo()">ADD VIDEO</button>
-      <div class="content-list" id="ve-list"></div>
-    </div>
+        <!-- DEVICE & BROWSER BREAKDOWN -->
+        <div class="breakdown">
+          <div class="breakdown-chart">
+            <div class="breakdown-title">📱 Device Breakdown</div>
+            <div id="device-breakdown"></div>
+          </div>
+          <div class="breakdown-chart">
+            <div class="breakdown-title">🌐 Browser Breakdown</div>
+            <div id="browser-breakdown"></div>
+          </div>
+        </div>
 
-    <!-- REVIEWS -->
-    <div class="admin-section">
-      <h2>💬 Client Reviews</h2>
-      <div class="form-group">
-        <label class="form-label">Client Name</label>
-        <input type="text" class="form-input" id="rv-name" placeholder="e.g. Alex Morgan">
+        <!-- POPULAR CONTENT -->
+        <h3 style="margin-top: 3rem; margin-bottom: 1rem; font-family: var(--disp); font-size: 1rem; color: var(--blue); letter-spacing: .1em;">🎬 TOP VIDEOS</h3>
+        <div class="content-list" id="top-videos"></div>
+
+        <!-- POPULAR SECTIONS -->
+        <h3 style="margin-top: 2rem; margin-bottom: 1rem; font-family: var(--disp); font-size: 1rem; color: var(--blue); letter-spacing: .1em;">📂 SECTION POPULARITY</h3>
+        <div class="content-list" id="section-popularity"></div>
+
+        <!-- EVENT BREAKDOWN -->
+        <h3 style="margin-top: 2rem; margin-bottom: 1rem; font-family: var(--disp); font-size: 1rem; color: var(--blue); letter-spacing: .1em;">🎯 EVENT TYPES</h3>
+        <div class="content-list" id="event-breakdown"></div>
       </div>
-      <div class="form-group">
-        <label class="form-label">Client Role / Platform</label>
-        <input type="text" class="form-input" id="rv-role" placeholder="e.g. Indie Developer · Discord">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Review Text</label>
-        <textarea class="form-input form-textarea" id="rv-text" placeholder="What did they say?"></textarea>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Rating</label>
-        <div style="display: flex; gap: 0.3rem; margin-top: 0.5rem;">
-          <button class="star-btn" data-v="1" onclick="setStar(1)">★</button>
-          <button class="star-btn" data-v="2" onclick="setStar(2)">★</button>
-          <button class="star-btn" data-v="3" onclick="setStar(3)">★</button>
-          <button class="star-btn" data-v="4" onclick="setStar(4)">★</button>
-          <button class="star-btn" data-v="5" onclick="setStar(5)">★</button>
+
+      <!-- CONTENT SECTION -->
+      <div id="content" class="section">
+        <div class="tabs">
+          <button class="tab active" onclick="switchTab('gamedev')">🎮 GAME DEV</button>
+          <button class="tab" onclick="switchTab('threed')">🧊 3D</button>
+          <button class="tab" onclick="switchTab('animation')">🎞️ ANIM</button>
+          <button class="tab" onclick="switchTab('video')">🎬 VIDEO</button>
+          <button class="tab" onclick="switchTab('reviews')">⭐ REVIEWS</button>
+        </div>
+
+        <div id="tab-gamedev" class="tab-content active">
+          <div class="form-group">
+            <label class="form-label">Title</label>
+            <input type="text" class="form-input" id="gd-title" placeholder="e.g. DLG Demo">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Description</label>
+            <textarea class="form-textarea" id="gd-desc"></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Video URL</label>
+            <input type="text" class="form-input" id="gd-url">
+          </div>
+          <button class="btn" onclick="addContent('gamedev')">ADD VIDEO</button>
+          <div style="margin-top: 2rem; border-top: 1px solid var(--bdr); padding-top: 2rem;">
+            <h3 style="margin-bottom: 1rem; color: var(--blue);">EXISTING VIDEOS</h3>
+            <div id="gd-list"></div>
+          </div>
+        </div>
+
+        <div id="tab-threed" class="tab-content">
+          <div class="form-group">
+            <label class="form-label">Model Name</label>
+            <input type="text" class="form-input" id="td-title" placeholder="Model name...">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Description</label>
+            <textarea class="form-textarea" id="td-desc"></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label">.GLB URL</label>
+            <input type="text" class="form-input" id="td-url">
+          </div>
+          <button class="btn" onclick="addContent('threed')">ADD MODEL</button>
+          <div style="margin-top: 2rem; border-top: 1px solid var(--bdr); padding-top: 2rem;">
+            <h3 style="margin-bottom: 1rem; color: var(--blue);">EXISTING MODELS</h3>
+            <div id="td-list"></div>
+          </div>
+        </div>
+
+        <div id="tab-animation" class="tab-content">
+          <div class="form-group">
+            <label class="form-label">Title</label>
+            <input type="text" class="form-input" id="an-title">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Description</label>
+            <textarea class="form-textarea" id="an-desc"></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Video URL</label>
+            <input type="text" class="form-input" id="an-url">
+          </div>
+          <button class="btn" onclick="addContent('animation')">ADD ANIMATION</button>
+          <div style="margin-top: 2rem; border-top: 1px solid var(--bdr); padding-top: 2rem;">
+            <h3 style="margin-bottom: 1rem; color: var(--blue);">EXISTING ANIMATIONS</h3>
+            <div id="an-list"></div>
+          </div>
+        </div>
+
+        <div id="tab-video" class="tab-content">
+          <div class="form-group">
+            <label class="form-label">Title</label>
+            <input type="text" class="form-input" id="ve-title">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Description</label>
+            <textarea class="form-textarea" id="ve-desc"></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Video URL</label>
+            <input type="text" class="form-input" id="ve-url">
+          </div>
+          <button class="btn" onclick="addContent('video')">ADD VIDEO</button>
+          <div style="margin-top: 2rem; border-top: 1px solid var(--bdr); padding-top: 2rem;">
+            <h3 style="margin-bottom: 1rem; color: var(--blue);">EXISTING VIDEOS</h3>
+            <div id="ve-list"></div>
+          </div>
+        </div>
+
+        <div id="tab-reviews" class="tab-content">
+          <div class="form-group">
+            <label class="form-label">Client Name</label>
+            <input type="text" class="form-input" id="rv-name">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Role</label>
+            <input type="text" class="form-input" id="rv-role">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Review</label>
+            <textarea class="form-textarea" id="rv-text"></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Rating</label>
+            <select class="form-select" id="rv-stars">
+              <option value="5">★★★★★ (5)</option>
+              <option value="4">★★★★☆ (4)</option>
+              <option value="3">★★★☆☆ (3)</option>
+            </select>
+          </div>
+          <button class="btn" onclick="addContent('reviews')">ADD REVIEW</button>
+          <div style="margin-top: 2rem; border-top: 1px solid var(--bdr); padding-top: 2rem;">
+            <h3 style="margin-bottom: 1rem; color: var(--blue);">EXISTING REVIEWS</h3>
+            <div id="rv-list"></div>
+          </div>
         </div>
       </div>
-      <button class="btn-submit" onclick="addReview()">ADD REVIEW</button>
-      <div class="content-list" id="rv-list"></div>
-    </div>
 
-    <!-- SITE DETAILS -->
-    <div class="admin-section">
-      <h2>⚙️ Site Details</h2>
-      <div class="form-group">
-        <label class="form-label">Organization Name</label>
-        <input type="text" class="form-input" id="dt-org" placeholder="GENIUS_REALMS">
+      <!-- DETAILS SECTION -->
+      <div id="details" class="section">
+        <h2 style="margin-bottom: 1.5rem; font-family: var(--disp); color: var(--blue);">SITE DETAILS</h2>
+        <div class="form-group">
+          <label class="form-label">Organization Name</label>
+          <input type="text" class="form-input" id="dt-org">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Tagline</label>
+          <input type="text" class="form-input" id="dt-tag">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Hero Line 1</label>
+          <input type="text" class="form-input" id="dt-h1">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Hero Line 2</label>
+          <input type="text" class="form-input" id="dt-h2">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Full Name</label>
+          <input type="text" class="form-input" id="dt-fn">
+        </div>
+        <hr style="border: none; border-top: 1px solid var(--bdr); margin: 2rem 0;">
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input type="email" class="form-input" id="dt-email">
+        </div>
+        <div class="form-group">
+          <label class="form-label">WhatsApp</label>
+          <input type="text" class="form-input" id="dt-phone">
+        </div>
+        <div class="form-group">
+          <label class="form-label">YouTube</label>
+          <input type="text" class="form-input" id="dt-yt">
+        </div>
+        <button class="btn" onclick="saveDetails()">SAVE</button>
+        <div id="details-message" style="margin-top: 1rem; display: none;"></div>
       </div>
-      <div class="form-group">
-        <label class="form-label">Tagline</label>
-        <input type="text" class="form-input" id="dt-tag" placeholder="Reality is just another project.">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Hero Line 1</label>
-        <input type="text" class="form-input" id="dt-h1" placeholder="OMOJASOLA">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Hero Line 2</label>
-        <input type="text" class="form-input" id="dt-h2" placeholder="SOLOMON">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Full Name</label>
-        <input type="text" class="form-input" id="dt-fn" placeholder="Omojasola Solomon Oluwadamilare">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Email</label>
-        <input type="email" class="form-input" id="dt-email" placeholder="your@email.com">
-      </div>
-      <div class="form-group">
-        <label class="form-label">WhatsApp (digits only with country code)</label>
-        <input type="text" class="form-input" id="dt-phone" placeholder="2348119809701">
-      </div>
-      <div class="form-group">
-        <label class="form-label">YouTube URL</label>
-        <input type="text" class="form-input" id="dt-yt" placeholder="https://www.youtube.com/@yourhandle">
-      </div>
-      <button class="btn-submit" onclick="saveDetails()">SAVE DETAILS</button>
-    </div>
 
-    <!-- DATA MANAGEMENT -->
-    <div class="admin-section">
-      <h2>📊 Data Management</h2>
-      <p style="color: var(--txt-m); font-size: 0.85rem; margin-bottom: 1rem;">Export and import your portfolio data as JSON backup.</p>
-      <button class="btn-submit" onclick="exportData()" style="margin-bottom: 0.5rem;">↓ EXPORT DATA</button>
-      <button class="btn-submit" onclick="document.getElementById('import-file').click()" style="background: transparent; color: var(--blue); border: 1px solid var(--blue); margin-bottom: 1rem;">↑ IMPORT DATA</button>
-      <input type="file" id="import-file" accept=".json" style="display: none;" onchange="importData(event)">
-      <hr style="border: none; border-top: 1px solid var(--bdr); margin: 1rem 0;">
-      <label class="form-label">New Password</label>
-      <input type="password" class="form-input" id="new-pw" placeholder="New password" style="margin-bottom: 0.5rem;">
-      <label class="form-label">Confirm Password</label>
-      <input type="password" class="form-input" id="confirm-pw" placeholder="Confirm password" style="margin-bottom: 1rem;">
-      <button class="btn-submit" onclick="changePw()">UPDATE PASSWORD</button>
+      <!-- DATA SECTION -->
+      <div id="data" class="section">
+        <h2 style="margin-bottom: 1.5rem; font-family: var(--disp); color: var(--blue);">DATA</h2>
+        <div style="background: var(--bg3); border: 1px solid var(--bdr); padding: 2rem; margin-bottom: 2rem;">
+          <h3 style="color: var(--txt); margin-bottom: 1rem;">EXPORT / IMPORT</h3>
+          <div style="display: flex; gap: 1rem;">
+            <button class="btn" onclick="exportData()">↓ EXPORT</button>
+            <button class="btn btn-sec" onclick="document.getElementById('import-file').click()">↑ IMPORT</button>
+            <input type="file" id="import-file" accept=".json" style="display: none;" onchange="importData(event)">
+          </div>
+        </div>
+        <div style="background: var(--bg3); border: 1px solid var(--bdr); padding: 2rem;">
+          <h3 style="color: #ff4466; margin-bottom: 1rem;">DANGER</h3>
+          <button class="btn" style="background: #ff4466;" onclick="if(confirm('Clear ALL analytics?')) clearAllAnalytics()">🗑️ CLEAR ANALYTICS</button>
+        </div>
+      </div>
     </div>
   </div>
 </div>
 
 <script>
-  // Dummy functions - replace with actual API calls
-  const API_BASE = '';
-  const getAuthToken = () => sessionStorage.getItem('gr_adm_pw');
-
-  function addGameDevVideo() { alert('Add game dev video - implement API call'); }
-  function add3DModel() { alert('Add 3D model - implement API call'); }
-  function addAnimationVideo() { alert('Add animation - implement API call'); }
-  function addVideoEditVideo() { alert('Add video editing - implement API call'); }
-  function addReview() { alert('Add review - implement API call'); }
-  function saveDetails() { alert('Save details - implement API call'); }
-  function exportData() { alert('Export data - implement API call'); }
-  function importData(e) { alert('Import data - implement API call'); }
-  function changePw() { alert('Change password - implement API call'); }
-  function logout() { 
-    sessionStorage.removeItem('gr_adm_pw');
-    window.location.href = '/';
+const API = {
+  async get(path) { 
+    const r = await fetch(path, { headers: { 'x-admin-password': getAdmPw() } });
+    return r.json(); 
+  },
+  async post(path, body) { 
+    const r = await fetch(path, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-admin-password': getAdmPw() },
+      body: JSON.stringify(body)
+    });
+    return r.json(); 
+  },
+  async del(path) { 
+    const r = await fetch(path, { method: 'DELETE', headers: { 'x-admin-password': getAdmPw() } });
+    return r.json(); 
   }
+};
 
-  let curStar = 5;
-  function setStar(v) {
-    curStar = v;
-    document.querySelectorAll('.star-btn').forEach(b => b.classList.toggle('on', parseInt(b.dataset.v) <= v));
+const getAdmPw = () => sessionStorage.getItem('gr_adm_pw') || '';
+
+if (!getAdmPw()) {
+  const pw = prompt('Enter admin password:');
+  if (!pw) { window.location.href = '/'; return; }
+  sessionStorage.setItem('gr_adm_pw', pw);
+}
+
+function switchSection(section) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.getElementById(section).classList.add('active');
+  document.querySelectorAll('.sidebar-item').forEach(s => s.classList.remove('active'));
+  event.target.closest('.sidebar-item').classList.add('active');
+  
+  const titles = { analytics: 'ANALYTICS', content: 'CONTENT', details: 'DETAILS', data: 'DATA' };
+  document.getElementById('section-title').textContent = titles[section];
+  
+  if (section === 'analytics') loadAnalytics();
+  else if (section === 'content') loadContent();
+  else if (section === 'details') loadDetails();
+}
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  event.target.classList.add('active');
+}
+
+async function loadAnalytics() {
+  const days = document.getElementById('analytics-days').value;
+  const data = await API.get('/api/analytics/dashboard?days=' + days);
+  
+  document.getElementById('stat-sessions').textContent = data.sessions || 0;
+  document.getElementById('stat-events').textContent = data.totalEvents || 0;
+  document.getElementById('stat-avgwatch').textContent = formatSeconds(data.avgWatchDuration);
+  document.getElementById('stat-avgcomp').textContent = data.avgCompletion + '%';
+  document.getElementById('stat-avgscroll').textContent = data.avgScrollDepth + '%';
+  document.getElementById('stat-eventtype').textContent = Object.keys(data.eventBreakdown || {}).length;
+  
+  const deviceEl = document.getElementById('device-breakdown');
+  deviceEl.innerHTML = '';
+  const totalEvents = data.totalEvents;
+  Object.entries(data.deviceBreakdown || {}).forEach(([device, count]) => {
+    const pct = Math.round((count / totalEvents) * 100);
+    deviceEl.innerHTML += `<div class="breakdown-item"><span class="breakdown-label">${device}</span><div class="breakdown-bar"><div class="breakdown-fill" style="width:${pct}%"></div></div><span class="breakdown-value">${pct}%</span></div>`;
+  });
+  
+  const browserEl = document.getElementById('browser-breakdown');
+  browserEl.innerHTML = '';
+  Object.entries(data.browserBreakdown || {}).forEach(([browser, count]) => {
+    const pct = Math.round((count / totalEvents) * 100);
+    browserEl.innerHTML += `<div class="breakdown-item"><span class="breakdown-label">${browser}</span><div class="breakdown-bar"><div class="breakdown-fill" style="width:${pct}%"></div></div><span class="breakdown-value">${pct}%</span></div>`;
+  });
+  
+  const videosEl = document.getElementById('top-videos');
+  videosEl.innerHTML = '';
+  (data.topVideos || []).forEach(v => {
+    videosEl.innerHTML += `<div class="content-item"><div><span style="color:var(--blue)">▶</span> ${v.title}</div><div class="content-stat"><div class="content-stat-val">${v.plays}</div><div class="content-stat-lbl">plays</div></div><div class="content-stat"><div class="content-stat-val">${v.avgWatch}s</div><div class="content-stat-lbl">avg</div></div><div class="content-stat"><div class="content-stat-val">${v.avgCompletion}%</div><div class="content-stat-lbl">compl</div></div></div>`;
+  });
+  
+  const sectionEl = document.getElementById('section-popularity');
+  sectionEl.innerHTML = '';
+  Object.entries(data.sectionPopularity || {}).sort((a, b) => b[1] - a[1]).forEach(([section, count]) => {
+    const icons = { gamedev: '🎮', animation: '🎞️', video: '🎬', threed: '🧊' };
+    sectionEl.innerHTML += `<div class="content-item" style="grid-template-columns: 1fr 80px"><div>${icons[section] || '📂'} ${section}</div><div class="content-stat"><div class="content-stat-val">${count}</div><div class="content-stat-lbl">views</div></div></div>`;
+  });
+  
+  const eventEl = document.getElementById('event-breakdown');
+  eventEl.innerHTML = '';
+  Object.entries(data.eventBreakdown || {}).sort((a, b) => b[1] - a[1]).forEach(([type, count]) => {
+    eventEl.innerHTML += `<div class="content-item" style="grid-template-columns: 1fr 80px"><div>${type}</div><div class="content-stat"><div class="content-stat-val">${count}</div><div class="content-stat-lbl">events</div></div></div>`;
+  });
+}
+
+function formatSeconds(s) { return s < 60 ? Math.round(s) + 's' : s < 3600 ? Math.round(s/60) + 'm' : Math.round(s/3600) + 'h'; }
+
+async function loadContent() {
+  const data = await API.get('/api/data');
+  const render = (list, items, type, sec = null) => {
+    list.innerHTML = '';
+    (items || []).forEach(v => list.innerHTML += `<div style="background:var(--bg2);padding:.8rem;margin-bottom:.5rem;display:flex;justify-content:space-between;"><span>${v.title || v.name}</span><button class="btn btn-sec" style="padding:.3rem .6rem;font-size:.7rem" onclick="deleteContent('${type}','${v._id}'${sec ? `,` + sec : ''})">DEL</button></div>`);
+  };
+  render(document.getElementById('gd-list'), data.gamedev, 'video', `'gamedev'`);
+  render(document.getElementById('td-list'), data.threed, 'model');
+  render(document.getElementById('an-list'), data.animation, 'video', `'animation'`);
+  render(document.getElementById('ve-list'), data.video, 'video', `'video'`);
+  render(document.getElementById('rv-list'), data.reviews, 'review');
+}
+
+async function loadDetails() {
+  const data = await API.get('/api/data');
+  const d = data.details || {};
+  ['dt-org', 'dt-tag', 'dt-h1', 'dt-h2', 'dt-fn', 'dt-email', 'dt-phone', 'dt-yt'].forEach(id => {
+    const key = id.replace('dt-', '');
+    document.getElementById(id).value = d[key] || '';
+  });
+}
+
+async function addContent(type) {
+  const fields = {
+    gamedev: { title: 'gd-title', desc: 'gd-desc', url: 'gd-url' },
+    threed: { title: 'td-title', desc: 'td-desc', url: 'td-url' },
+    animation: { title: 'an-title', desc: 'an-desc', url: 'an-url' },
+    video: { title: 've-title', desc: 've-desc', url: 've-url' },
+    reviews: { name: 'rv-name', role: 'rv-role', text: 'rv-text' }
+  };
+  
+  const f = fields[type];
+  
+  if (type === 'reviews') {
+    const res = await API.post('/api/reviews', {
+      name: document.getElementById(f.name).value,
+      role: document.getElementById(f.role).value,
+      text: document.getElementById(f.text).value,
+      stars: parseInt(document.getElementById('rv-stars').value)
+    });
+    if (res._id) { document.getElementById(f.name).value = ''; document.getElementById(f.role).value = ''; document.getElementById(f.text).value = ''; loadContent(); }
+  } else if (type === 'threed') {
+    const res = await API.post('/api/models', { title: document.getElementById(f.title).value, desc: document.getElementById(f.desc).value, url: document.getElementById(f.url).value });
+    if (res._id) { document.getElementById(f.title).value = ''; document.getElementById(f.desc).value = ''; document.getElementById(f.url).value = ''; loadContent(); }
+  } else {
+    const res = await API.post('/api/videos', { section: type, title: document.getElementById(f.title).value, desc: document.getElementById(f.desc).value, url: document.getElementById(f.url).value });
+    if (res._id) { document.getElementById(f.title).value = ''; document.getElementById(f.desc).value = ''; document.getElementById(f.url).value = ''; loadContent(); }
   }
-  setStar(5);
+}
+
+async function deleteContent(type, id, sec) {
+  if (!confirm('Delete?')) return;
+  if (type === 'video') await API.del('/api/videos/' + id);
+  else if (type === 'model') await API.del('/api/models/' + id);
+  else if (type === 'review') await API.del('/api/reviews/' + id);
+  loadContent();
+}
+
+async function saveDetails() {
+  const res = await API.post('/api/details', {
+    org: document.getElementById('dt-org').value,
+    tag: document.getElementById('dt-tag').value,
+    h1: document.getElementById('dt-h1').value,
+    h2: document.getElementById('dt-h2').value,
+    fn: document.getElementById('dt-fn').value,
+    email: document.getElementById('dt-email').value,
+    phone: document.getElementById('dt-phone').value,
+    yt: document.getElementById('dt-yt').value
+  });
+  
+  const msg = document.getElementById('details-message');
+  msg.style.display = 'block';
+  msg.style.color = res._id ? 'var(--blue)' : '#ff4466';
+  msg.textContent = res._id ? '✓ Saved' : '✗ Error';
+  setTimeout(() => msg.style.display = 'none', 2000);
+}
+
+function exportData() {
+  API.get('/api/data').then(data => {
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'genius-realms-' + new Date().toISOString().split('T')[0] + '.json';
+    a.click();
+  });
+}
+
+function logout() { sessionStorage.removeItem('gr_adm_pw'); window.location.href = '/'; }
+
+async function clearAllAnalytics() {
+  const data = await API.get('/api/analytics');
+  for (const item of data.raw || []) await API.del('/api/analytics/' + item._id);
+  alert('Cleared');
+  loadAnalytics();
+}
+
+loadAnalytics();
 </script>
 
 </body>
