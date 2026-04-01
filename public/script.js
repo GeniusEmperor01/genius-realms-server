@@ -281,6 +281,9 @@ async function loadAll() {
     renderModels(data.threed || []);
     renderReviews(data.reviews || []);
     applyDetails(data.details || {});
+    
+    // Initialize auto-play observers for video sections
+    setTimeout(() => setupSectionAutoPlayObserver(), 300);
   } catch(e) {
     console.error('Failed to load data:', e);
   }
@@ -465,6 +468,270 @@ async function trackVideoAnalytics() {
 }
 
 /* ===== VIDEO MODAL ===== */
+/* ===== CUSTOM VIDEO PLAYER ===== */
+class CustomVideoPlayer {
+  constructor(containerId, videoSrc, videoType = 'direct') {
+    this.container = document.getElementById(containerId);
+    this.videoSrc = videoSrc;
+    this.videoType = videoType;
+    this.video = null;
+    this.isPlaying = false;
+    this.isFullscreen = false;
+    this.currentTime = 0;
+    this.duration = 0;
+    
+    this.init();
+  }
+
+  init() {
+    this.container.innerHTML = `
+      <div class="custom-video-player" id="cvp-player">
+        <div class="cvp-video-container" id="cvp-video-container">
+          ${this.videoType === 'direct' 
+            ? `<video class="cvp-video" id="cvp-video-element"></video>`
+            : `<iframe class="cvp-iframe" src="${this.videoSrc}" allowfullscreen allow="autoplay;encrypted-media;accelerometer;gyroscope"></iframe>`
+          }
+        </div>
+        <div class="cvp-controls" id="cvp-controls">
+          <button class="cvp-play-pause" id="cvp-play-btn" title="Play/Pause (Space)">▶</button>
+          <div class="cvp-timeline">
+            <span class="cvp-time" id="cvp-current">0:00</span>
+            <div class="cvp-progress-bar" id="cvp-progress" title="Seek">
+              <div class="cvp-progress-fill" id="cvp-progress-fill"></div>
+            </div>
+            <span class="cvp-time" id="cvp-duration">0:00</span>
+          </div>
+          <div class="cvp-volume">
+            <button class="cvp-volume-btn" id="cvp-volume-btn" title="Mute (M)">🔊</button>
+            <div class="cvp-volume-slider" id="cvp-volume-slider">
+              <div class="cvp-volume-fill" id="cvp-volume-fill"></div>
+            </div>
+          </div>
+          <button class="cvp-speed-btn" id="cvp-speed-btn" title="Playback Speed">1×</button>
+          <button class="cvp-fullscreen-btn" id="cvp-fullscreen-btn" title="Fullscreen (F)">⛶</button>
+        </div>
+        <div class="cvp-help">
+          <div class="cvp-help-item"><span class="cvp-help-key">SPACE</span> <span>Play/Pause</span></div>
+          <div class="cvp-help-item"><span class="cvp-help-key">F</span> <span>Fullscreen</span></div>
+          <div class="cvp-help-item"><span class="cvp-help-key">M</span> <span>Mute</span></div>
+          <div class="cvp-help-item"><span class="cvp-help-key">→</span> <span>Forward 5s</span></div>
+        </div>
+      </div>`;
+
+    if (this.videoType === 'direct') {
+      this.video = document.getElementById('cvp-video-element');
+      this.video.src = this.videoSrc;
+      this.setupVideoEvents();
+    }
+    
+    this.setupControls();
+  }
+
+  setupVideoEvents() {
+    this.video.addEventListener('loadedmetadata', () => {
+      this.duration = this.video.duration;
+      this.updateDuration();
+    });
+
+    this.video.addEventListener('timeupdate', () => {
+      this.currentTime = this.video.currentTime;
+      this.updateProgress();
+    });
+
+    this.video.addEventListener('play', () => {
+      this.isPlaying = true;
+      this.updatePlayButton();
+    });
+
+    this.video.addEventListener('pause', () => {
+      this.isPlaying = false;
+      this.updatePlayButton();
+    });
+
+    this.video.addEventListener('ended', () => {
+      this.isPlaying = false;
+      this.updatePlayButton();
+    });
+  }
+
+  setupControls() {
+    const playBtn = document.getElementById('cvp-play-btn');
+    const progressBar = document.getElementById('cvp-progress');
+    const volumeBtn = document.getElementById('cvp-volume-btn');
+    const volumeSlider = document.getElementById('cvp-volume-slider');
+    const speedBtn = document.getElementById('cvp-speed-btn');
+    const fullscreenBtn = document.getElementById('cvp-fullscreen-btn');
+
+    let currentSpeed = 1;
+
+    playBtn.addEventListener('click', () => this.togglePlay());
+
+    progressBar.addEventListener('click', (e) => {
+      if (!this.video) return;
+      const rect = progressBar.getBoundingClientRect();
+      const pos = (e.clientX - rect.left) / rect.width;
+      this.video.currentTime = pos * this.duration;
+    });
+
+    volumeBtn.addEventListener('click', () => {
+      if (this.video) {
+        this.video.muted = !this.video.muted;
+        volumeBtn.textContent = this.video.muted ? '🔇' : '🔊';
+      }
+    });
+
+    volumeSlider.addEventListener('click', (e) => {
+      if (!this.video) return;
+      const rect = volumeSlider.getBoundingClientRect();
+      const pos = (e.clientX - rect.left) / rect.width;
+      this.video.volume = Math.max(0, Math.min(1, pos));
+      this.updateVolume();
+    });
+
+    speedBtn.addEventListener('click', () => {
+      if (!this.video) return;
+      const speeds = [0.5, 1, 1.25, 1.5, 2];
+      const idx = speeds.indexOf(currentSpeed);
+      currentSpeed = speeds[(idx + 1) % speeds.length];
+      this.video.playbackRate = currentSpeed;
+      speedBtn.textContent = currentSpeed + '×';
+    });
+
+    fullscreenBtn.addEventListener('click', () => this.toggleFullscreen());
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+      if (!document.getElementById('cvp-player')) return;
+      
+      switch(e.code) {
+        case 'Space':
+          e.preventDefault();
+          if (this.video) this.togglePlay();
+          break;
+        case 'KeyF':
+          this.toggleFullscreen();
+          break;
+        case 'KeyM':
+          if (this.video) {
+            this.video.muted = !this.video.muted;
+            volumeBtn.textContent = this.video.muted ? '🔇' : '🔊';
+          }
+          break;
+        case 'ArrowRight':
+          if (this.video) this.video.currentTime = Math.min(this.duration, this.video.currentTime + 5);
+          break;
+        case 'ArrowLeft':
+          if (this.video) this.video.currentTime = Math.max(0, this.video.currentTime - 5);
+          break;
+      }
+    });
+  }
+
+  togglePlay() {
+    if (!this.video) return;
+    if (this.video.paused) {
+      this.video.play();
+    } else {
+      this.video.pause();
+    }
+  }
+
+  updatePlayButton() {
+    const btn = document.getElementById('cvp-play-btn');
+    if (btn) btn.textContent = this.isPlaying ? '⏸' : '▶';
+  }
+
+  updateProgress() {
+    const fill = document.getElementById('cvp-progress-fill');
+    const current = document.getElementById('cvp-current');
+    if (fill) fill.style.width = (this.currentTime / this.duration * 100) + '%';
+    if (current) current.textContent = this.formatTime(this.currentTime);
+  }
+
+  updateDuration() {
+    const duration = document.getElementById('cvp-duration');
+    if (duration) duration.textContent = this.formatTime(this.duration);
+  }
+
+  updateVolume() {
+    if (!this.video) return;
+    const fill = document.getElementById('cvp-volume-fill');
+    if (fill) fill.style.width = (this.video.volume * 100) + '%';
+  }
+
+  formatTime(seconds) {
+    if (!seconds || isNaN(seconds)) return '0:00';
+    const hrs = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    const secs = Math.floor(seconds % 60);
+    if (hrs > 0) return `${hrs}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  }
+
+  toggleFullscreen() {
+    const player = document.getElementById('cvp-player');
+    if (!player) return;
+
+    this.isFullscreen = !this.isFullscreen;
+    
+    if (this.isFullscreen) {
+      player.classList.add('cvp-fullscreen');
+      document.body.style.overflow = 'hidden';
+      if (this.video) this.video.parentElement.style.height = '100vh';
+    } else {
+      player.classList.remove('cvp-fullscreen');
+      document.body.style.overflow = '';
+      if (this.video) this.video.parentElement.style.height = '';
+    }
+  }
+}
+
+/* ===== AUTO-PLAY ON SCROLL ===== */
+function setupAutoPlayVideos() {
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      const video = entry.target.querySelector('video');
+      if (!video) return;
+
+      if (entry.isIntersecting && entry.intersectionRatio > 0.5) {
+        if (video.paused) {
+          video.play().catch(() => {}); // Catch if autoplay is not allowed
+        }
+      } else {
+        if (!video.paused) {
+          video.pause();
+        }
+      }
+    });
+  }, { threshold: 0.5 });
+
+  // Observe all video containers after a delay
+  setTimeout(() => {
+    document.querySelectorAll('.cvp-video-container').forEach(container => {
+      observer.observe(container);
+    });
+  }, 500);
+}
+
+/* ===== VIDEO SECTION AUTO-PLAY OBSERVER ===== */
+function setupSectionAutoPlayObserver() {
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting && entry.intersectionRatio > 0.7) {
+        const section = entry.target.closest('section');
+        if (section) {
+          trackSectionView(section.id);
+        }
+      }
+    });
+  }, { threshold: 0.7 });
+
+  document.querySelectorAll('.video-grid').forEach(grid => {
+    observer.observe(grid);
+  });
+}
+
+
 function openVid(title, desc, embed, kind, videoId, section) {
   document.getElementById('mod-title').textContent = title.toUpperCase();
   document.getElementById('mod-desc').textContent = desc || '';
@@ -475,19 +742,19 @@ function openVid(title, desc, embed, kind, videoId, section) {
   videoAnalytics.startTime = new Date();
   videoAnalytics.startTimeUnix = Date.now();
   videoAnalytics.lastTrackedTime = 0;
-  
+
   const embedContainer = document.getElementById('mod-embed');
-  embedContainer.innerHTML = kind === 'direct'
-    ? `<video controls autoplay><source src="${embed}"></video>`
-    : `<iframe src="${embed}" allowfullscreen allow="autoplay;encrypted-media"></iframe>`;
+  embedContainer.innerHTML = '';
+  
+  // Create custom video player
+  const player = new CustomVideoPlayer('mod-embed', embed, kind);
   
   if (kind === 'direct') {
-    videoAnalytics.videoElement = embedContainer.querySelector('video');
+    videoAnalytics.videoElement = document.getElementById('cvp-video-element');
     if (videoAnalytics.videoElement) {
       videoAnalytics.videoElement.addEventListener('loadedmetadata', () => {
         videoAnalytics.totalDuration = videoAnalytics.videoElement.duration || 0;
       });
-      // Track video time periodically
       videoAnalytics.videoElement.addEventListener('timeupdate', () => {
         videoAnalytics.lastTrackedTime = videoAnalytics.videoElement.currentTime;
       });
@@ -496,6 +763,9 @@ function openVid(title, desc, embed, kind, videoId, section) {
     videoAnalytics.videoElement = null;
     videoAnalytics.totalDuration = 0;
   }
+  
+  // Setup auto-play for scrolled content
+  setTimeout(() => setupAutoPlayVideos(), 100);
   
   document.getElementById('vid-modal').classList.add('open');
 }
@@ -513,6 +783,8 @@ window.closeVid = () => {
 document.getElementById('vid-modal').addEventListener('click', e => {
   if (e.target === document.getElementById('vid-modal')) window.closeVid();
 });
+
+
 
 /* ===== HIRE ME ===== */
 window.hireSend = ch => {
