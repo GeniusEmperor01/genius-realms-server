@@ -429,20 +429,38 @@
 <script>
 const API = {
   async get(path) { 
-    const r = await fetch(path, { headers: { 'x-admin-password': getAdmPw() } });
-    return r.json(); 
+    try {
+      const r = await fetch(path, { headers: { 'x-admin-password': getAdmPw() } });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      return await r.json();
+    } catch (err) {
+      console.error('API GET Error:', err);
+      return {};
+    }
   },
   async post(path, body) { 
-    const r = await fetch(path, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-admin-password': getAdmPw() },
-      body: JSON.stringify(body)
-    });
-    return r.json(); 
+    try {
+      const r = await fetch(path, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-admin-password': getAdmPw() },
+        body: JSON.stringify(body)
+      });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      return await r.json();
+    } catch (err) {
+      console.error('API POST Error:', err);
+      return {};
+    }
   },
   async del(path) { 
-    const r = await fetch(path, { method: 'DELETE', headers: { 'x-admin-password': getAdmPw() } });
-    return r.json(); 
+    try {
+      const r = await fetch(path, { method: 'DELETE', headers: { 'x-admin-password': getAdmPw() } });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      return await r.json();
+    } catch (err) {
+      console.error('API DELETE Error:', err);
+      return {};
+    }
   }
 };
 
@@ -458,7 +476,7 @@ function switchSection(section) {
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   document.getElementById(section).classList.add('active');
   document.querySelectorAll('.sidebar-item').forEach(s => s.classList.remove('active'));
-  event.target.closest('.sidebar-item').classList.add('active');
+  event.currentTarget.classList.add('active');
   
   const titles = { 
     analytics: '📊 ANALYTICS DASHBOARD', 
@@ -481,155 +499,218 @@ function switchTab(tab) {
 }
 
 async function loadAnalytics() {
-  const days = document.getElementById('analytics-days').value;
-  const data = await API.get('/api/analytics/dashboard?days=' + days);
-  
-  document.getElementById('stat-sessions').textContent = data.sessions || 0;
-  document.getElementById('stat-events').textContent = data.totalEvents || 0;
-  document.getElementById('stat-avgwatch').textContent = formatSeconds(data.avgWatchDuration);
-  document.getElementById('stat-avgcomp').textContent = data.avgCompletion + '%';
-  document.getElementById('stat-avgscroll').textContent = data.avgScrollDepth + '%';
-  document.getElementById('stat-eventtype').textContent = Object.keys(data.eventBreakdown || {}).length;
-  
-  const deviceEl = document.getElementById('device-breakdown');
-  deviceEl.innerHTML = '';
-  const totalEvents = data.totalEvents;
-  Object.entries(data.deviceBreakdown || {}).forEach(([device, count]) => {
-    const pct = Math.round((count / totalEvents) * 100);
-    deviceEl.innerHTML += `<div class="breakdown-item"><span class="breakdown-label">${device}</span><div class="breakdown-bar"><div class="breakdown-fill" style="width:${pct}%"></div></div><span class="breakdown-value">${pct}%</span></div>`;
-  });
-  
-  const browserEl = document.getElementById('browser-breakdown');
-  browserEl.innerHTML = '';
-  Object.entries(data.browserBreakdown || {}).forEach(([browser, count]) => {
-    const pct = Math.round((count / totalEvents) * 100);
-    browserEl.innerHTML += `<div class="breakdown-item"><span class="breakdown-label">${browser}</span><div class="breakdown-bar"><div class="breakdown-fill" style="width:${pct}%"></div></div><span class="breakdown-value">${pct}%</span></div>`;
-  });
-  
-  const videosEl = document.getElementById('top-videos');
-  videosEl.innerHTML = '';
-  (data.topVideos || []).forEach(v => {
-    videosEl.innerHTML += `<div class="content-item"><div><span style="color:var(--blue)">▶</span> ${v.title}</div><div class="content-stat"><div class="content-stat-val">${v.plays}</div><div class="content-stat-lbl">plays</div></div><div class="content-stat"><div class="content-stat-val">${v.avgWatch}s</div><div class="content-stat-lbl">avg</div></div><div class="content-stat"><div class="content-stat-val">${v.avgCompletion}%</div><div class="content-stat-lbl">compl</div></div></div>`;
-  });
-  
-  const sectionEl = document.getElementById('section-popularity');
-  sectionEl.innerHTML = '';
-  Object.entries(data.sectionPopularity || {}).sort((a, b) => b[1] - a[1]).forEach(([section, count]) => {
-    const icons = { gamedev: '🎮', animation: '🎞️', video: '🎬', threed: '🧊' };
-    sectionEl.innerHTML += `<div class="content-item" style="grid-template-columns: 1fr 80px"><div>${icons[section] || '📂'} ${section}</div><div class="content-stat"><div class="content-stat-val">${count}</div><div class="content-stat-lbl">views</div></div></div>`;
-  });
-  
-  const eventEl = document.getElementById('event-breakdown');
-  eventEl.innerHTML = '';
-  Object.entries(data.eventBreakdown || {}).sort((a, b) => b[1] - a[1]).forEach(([type, count]) => {
-    eventEl.innerHTML += `<div class="content-item" style="grid-template-columns: 1fr 80px"><div>${type}</div><div class="content-stat"><div class="content-stat-val">${count}</div><div class="content-stat-lbl">events</div></div></div>`;
-  });
+  try {
+    const days = document.getElementById('analytics-days').value;
+    const data = await API.get('/api/analytics/dashboard?days=' + days);
+    
+    document.getElementById('stat-sessions').textContent = data.sessions || 0;
+    document.getElementById('stat-events').textContent = data.totalEvents || 0;
+    document.getElementById('stat-avgwatch').textContent = formatSeconds(data.avgWatchDuration || 0);
+    document.getElementById('stat-avgcomp').textContent = (data.avgCompletion || 0) + '%';
+    document.getElementById('stat-avgscroll').textContent = (data.avgScrollDepth || 0) + '%';
+    document.getElementById('stat-eventtype').textContent = Object.keys(data.eventBreakdown || {}).length;
+    
+    const deviceEl = document.getElementById('device-breakdown');
+    deviceEl.innerHTML = '';
+    const totalEvents = data.totalEvents || 1;
+    Object.entries(data.deviceBreakdown || {}).forEach(([device, count]) => {
+      const pct = Math.round((count / totalEvents) * 100);
+      deviceEl.innerHTML += `<div class="breakdown-item"><span class="breakdown-label">${device}</span><div class="breakdown-bar"><div class="breakdown-fill" style="width:${pct}%"></div></div><span class="breakdown-value">${pct}%</span></div>`;
+    });
+    
+    const browserEl = document.getElementById('browser-breakdown');
+    browserEl.innerHTML = '';
+    Object.entries(data.browserBreakdown || {}).forEach(([browser, count]) => {
+      const pct = Math.round((count / totalEvents) * 100);
+      browserEl.innerHTML += `<div class="breakdown-item"><span class="breakdown-label">${browser}</span><div class="breakdown-bar"><div class="breakdown-fill" style="width:${pct}%"></div></div><span class="breakdown-value">${pct}%</span></div>`;
+    });
+    
+    const videosEl = document.getElementById('top-videos');
+    videosEl.innerHTML = '';
+    (data.topVideos || []).forEach(v => {
+      videosEl.innerHTML += `<div class="content-item"><div><span style="color:var(--blue)">▶</span> ${v.title}</div><div class="content-stat"><div class="content-stat-val">${v.plays || 0}</div><div class="content-stat-lbl">plays</div></div><div class="content-stat"><div class="content-stat-val">${v.avgWatch || 0}s</div><div class="content-stat-lbl">avg</div></div><div class="content-stat"><div class="content-stat-val">${v.avgCompletion || 0}%</div><div class="content-stat-lbl">compl</div></div></div>`;
+    });
+    
+    const sectionEl = document.getElementById('section-popularity');
+    sectionEl.innerHTML = '';
+    Object.entries(data.sectionPopularity || {}).sort((a, b) => b[1] - a[1]).forEach(([section, count]) => {
+      const icons = { gamedev: '🎮', animation: '🎞️', video: '🎬', threed: '🧊' };
+      sectionEl.innerHTML += `<div class="content-item" style="grid-template-columns: 1fr 80px"><div>${icons[section] || '📂'} ${section}</div><div class="content-stat"><div class="content-stat-val">${count}</div><div class="content-stat-lbl">views</div></div></div>`;
+    });
+    
+    const eventEl = document.getElementById('event-breakdown');
+    eventEl.innerHTML = '';
+    Object.entries(data.eventBreakdown || {}).sort((a, b) => b[1] - a[1]).forEach(([type, count]) => {
+      eventEl.innerHTML += `<div class="content-item" style="grid-template-columns: 1fr 80px"><div>${type}</div><div class="content-stat"><div class="content-stat-val">${count}</div><div class="content-stat-lbl">events</div></div></div>`;
+    });
+  } catch (err) {
+    console.error('loadAnalytics Error:', err);
+  }
 }
 
 function formatSeconds(s) { return s < 60 ? Math.round(s) + 's' : s < 3600 ? Math.round(s/60) + 'm' : Math.round(s/3600) + 'h'; }
 
 async function loadContent() {
-  const data = await API.get('/api/data');
-  const render = (list, items, type, sec = null) => {
-    list.innerHTML = '';
-    if (!items || items.length === 0) {
-      list.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--txt-d);">No items yet</div>';
-      return;
-    }
-    (items || []).forEach(v => list.innerHTML += `<div style="background:var(--bg2);padding:1rem;margin-bottom:.8rem;display:flex;justify-content:space-between;align-items:center;border:1px solid var(--bdr);border-radius:4px;"><span style="color:var(--txt)">${v.title || v.name}</span><button class="del-btn" onclick="deleteContent('${type}','${v._id}'${sec ? `,` + sec : ''})">DELETE</button></div>`);
-  };
-  render(document.getElementById('gd-list'), data.gamedev, 'video', `'gamedev'`);
-  render(document.getElementById('td-list'), data.threed, 'model');
-  render(document.getElementById('an-list'), data.animation, 'video', `'animation'`);
-  render(document.getElementById('ve-list'), data.video, 'video', `'video'`);
-  render(document.getElementById('rv-list'), data.reviews, 'review');
+  try {
+    const data = await API.get('/api/data');
+    const render = (list, items, type, sec = null) => {
+      list.innerHTML = '';
+      if (!items || items.length === 0) {
+        list.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--txt-d);">No items yet</div>';
+        return;
+      }
+      (items || []).forEach(v => list.innerHTML += `<div style="background:var(--bg2);padding:1rem;margin-bottom:.8rem;display:flex;justify-content:space-between;align-items:center;border:1px solid var(--bdr);border-radius:4px;"><span style="color:var(--txt)">${v.title || v.name}</span><button class="del-btn" onclick="deleteContent('${type}','${v._id}'${sec ? `,` + sec : ''})">DELETE</button></div>`);
+    };
+    render(document.getElementById('gd-list'), data.gamedev, 'video', `'gamedev'`);
+    render(document.getElementById('td-list'), data.threed, 'model');
+    render(document.getElementById('an-list'), data.animation, 'video', `'animation'`);
+    render(document.getElementById('ve-list'), data.video, 'video', `'video'`);
+    render(document.getElementById('rv-list'), data.reviews, 'review');
+  } catch (err) {
+    console.error('loadContent Error:', err);
+  }
 }
 
 async function loadDetails() {
-  const data = await API.get('/api/data');
-  const d = data.details || {};
-  ['dt-org', 'dt-tag', 'dt-h1', 'dt-h2', 'dt-fn', 'dt-email', 'dt-phone', 'dt-yt'].forEach(id => {
-    const key = id.replace('dt-', '');
-    document.getElementById(id).value = d[key] || '';
-  });
+  try {
+    const data = await API.get('/api/data');
+    const d = data.details || {};
+    ['dt-org', 'dt-tag', 'dt-h1', 'dt-h2', 'dt-fn', 'dt-email', 'dt-phone', 'dt-yt'].forEach(id => {
+      const key = id.replace('dt-', '');
+      document.getElementById(id).value = d[key] || '';
+    });
+  } catch (err) {
+    console.error('loadDetails Error:', err);
+  }
 }
 
 async function addContent(type) {
-  const fields = {
-    gamedev: { title: 'gd-title', desc: 'gd-desc', url: 'gd-url' },
-    threed: { title: 'td-title', desc: 'td-desc', url: 'td-url' },
-    animation: { title: 'an-title', desc: 'an-desc', url: 'an-url' },
-    video: { title: 've-title', desc: 've-desc', url: 've-url' },
-    reviews: { name: 'rv-name', role: 'rv-role', text: 'rv-text' }
-  };
-  
-  const f = fields[type];
-  
-  if (type === 'reviews') {
-    const res = await API.post('/api/reviews', {
-      name: document.getElementById(f.name).value,
-      role: document.getElementById(f.role).value,
-      text: document.getElementById(f.text).value,
-      stars: parseInt(document.getElementById('rv-stars').value)
-    });
-    if (res._id) { document.getElementById(f.name).value = ''; document.getElementById(f.role).value = ''; document.getElementById(f.text).value = ''; loadContent(); }
-  } else if (type === 'threed') {
-    const res = await API.post('/api/models', { title: document.getElementById(f.title).value, desc: document.getElementById(f.desc).value, url: document.getElementById(f.url).value });
-    if (res._id) { document.getElementById(f.title).value = ''; document.getElementById(f.desc).value = ''; document.getElementById(f.url).value = ''; loadContent(); }
-  } else {
-    const res = await API.post('/api/videos', { section: type, title: document.getElementById(f.title).value, desc: document.getElementById(f.desc).value, url: document.getElementById(f.url).value });
-    if (res._id) { document.getElementById(f.title).value = ''; document.getElementById(f.desc).value = ''; document.getElementById(f.url).value = ''; loadContent(); }
+  try {
+    const fields = {
+      gamedev: { title: 'gd-title', desc: 'gd-desc', url: 'gd-url' },
+      threed: { title: 'td-title', desc: 'td-desc', url: 'td-url' },
+      animation: { title: 'an-title', desc: 'an-desc', url: 'an-url' },
+      video: { title: 've-title', desc: 've-desc', url: 've-url' },
+      reviews: { name: 'rv-name', role: 'rv-role', text: 'rv-text' }
+    };
+    
+    const f = fields[type];
+    
+    if (type === 'reviews') {
+      const res = await API.post('/api/reviews', {
+        name: document.getElementById(f.name).value,
+        role: document.getElementById(f.role).value,
+        text: document.getElementById(f.text).value,
+        stars: parseInt(document.getElementById('rv-stars').value)
+      });
+      if (res._id) { document.getElementById(f.name).value = ''; document.getElementById(f.role).value = ''; document.getElementById(f.text).value = ''; loadContent(); }
+    } else if (type === 'threed') {
+      const res = await API.post('/api/models', { title: document.getElementById(f.title).value, desc: document.getElementById(f.desc).value, url: document.getElementById(f.url).value });
+      if (res._id) { document.getElementById(f.title).value = ''; document.getElementById(f.desc).value = ''; document.getElementById(f.url).value = ''; loadContent(); }
+    } else {
+      const res = await API.post('/api/videos', { section: type, title: document.getElementById(f.title).value, desc: document.getElementById(f.desc).value, url: document.getElementById(f.url).value });
+      if (res._id) { document.getElementById(f.title).value = ''; document.getElementById(f.desc).value = ''; document.getElementById(f.url).value = ''; loadContent(); }
+    }
+  } catch (err) {
+    console.error('addContent Error:', err);
   }
 }
 
 async function deleteContent(type, id, sec) {
-  if (!confirm('Delete?')) return;
-  if (type === 'video') await API.del('/api/videos/' + id);
-  else if (type === 'model') await API.del('/api/models/' + id);
-  else if (type === 'review') await API.del('/api/reviews/' + id);
-  loadContent();
+  try {
+    if (!confirm('Delete?')) return;
+    if (type === 'video') await API.del('/api/videos/' + id);
+    else if (type === 'model') await API.del('/api/models/' + id);
+    else if (type === 'review') await API.del('/api/reviews/' + id);
+    loadContent();
+  } catch (err) {
+    console.error('deleteContent Error:', err);
+  }
 }
 
 async function saveDetails() {
-  const res = await API.post('/api/details', {
-    org: document.getElementById('dt-org').value,
-    tag: document.getElementById('dt-tag').value,
-    h1: document.getElementById('dt-h1').value,
-    h2: document.getElementById('dt-h2').value,
-    fn: document.getElementById('dt-fn').value,
-    email: document.getElementById('dt-email').value,
-    phone: document.getElementById('dt-phone').value,
-    yt: document.getElementById('dt-yt').value
-  });
-  
-  const msg = document.getElementById('details-message');
-  msg.style.display = 'block';
-  msg.style.color = res._id ? 'var(--blue)' : '#ff4466';
-  msg.textContent = res._id ? '✓ Saved' : '✗ Error';
-  setTimeout(() => msg.style.display = 'none', 2000);
+  try {
+    const res = await API.post('/api/details', {
+      org: document.getElementById('dt-org').value,
+      tag: document.getElementById('dt-tag').value,
+      h1: document.getElementById('dt-h1').value,
+      h2: document.getElementById('dt-h2').value,
+      fn: document.getElementById('dt-fn').value,
+      email: document.getElementById('dt-email').value,
+      phone: document.getElementById('dt-phone').value,
+      yt: document.getElementById('dt-yt').value
+    });
+    
+    const msg = document.getElementById('details-message');
+    msg.style.display = 'block';
+    msg.style.color = res._id ? 'var(--blue)' : '#ff4466';
+    msg.textContent = res._id ? '✓ Saved' : '✗ Error';
+    setTimeout(() => msg.style.display = 'none', 2000);
+  } catch (err) {
+    console.error('saveDetails Error:', err);
+  }
 }
 
 function exportData() {
-  API.get('/api/data').then(data => {
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'genius-realms-' + new Date().toISOString().split('T')[0] + '.json';
-    a.click();
-  });
+  try {
+    API.get('/api/data').then(data => {
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'genius-realms-' + new Date().toISOString().split('T')[0] + '.json';
+      a.click();
+    });
+  } catch (err) {
+    console.error('exportData Error:', err);
+  }
 }
 
-function logout() { sessionStorage.removeItem('gr_adm_pw'); window.location.href = '/'; }
+function logout() { 
+  sessionStorage.removeItem('gr_adm_pw'); 
+  window.location.href = '/'; 
+}
+
+function importData(event) {
+  try {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const data = JSON.parse(e.target.result);
+        await API.post('/api/import', data);
+        alert('Data imported successfully');
+        loadContent();
+      } catch (err) {
+        alert('Error importing data: ' + err.message);
+        console.error('importData Error:', err);
+      }
+    };
+    reader.readAsText(file);
+  } catch (err) {
+    console.error('importData Error:', err);
+  }
+}
 
 async function clearAllAnalytics() {
-  const data = await API.get('/api/analytics');
-  for (const item of data.raw || []) await API.del('/api/analytics/' + item._id);
-  alert('Cleared');
-  loadAnalytics();
+  try {
+    const data = await API.get('/api/analytics');
+    for (const item of data.raw || []) {
+      await API.del('/api/analytics/' + item._id);
+    }
+    alert('Analytics cleared');
+    loadAnalytics();
+  } catch (err) {
+    console.error('clearAllAnalytics Error:', err);
+  }
 }
 
-loadAnalytics();
+// Initialize on page load
+window.addEventListener('load', () => {
+  loadAnalytics();
+});
 </script>
 
 </body>

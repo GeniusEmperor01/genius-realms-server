@@ -413,6 +413,57 @@ app.delete('/api/analytics/:id', auth, async (req, res) => {
   }
 });
 
+// -- IMPORT DATA (admin only) --
+app.post('/api/import', auth, async (req, res) => {
+  try {
+    const { gamedev, animation, video, threed, reviews, details } = req.body;
+    
+    // Import videos
+    if (gamedev && Array.isArray(gamedev)) {
+      for (const v of gamedev) {
+        await Video.create({ section: 'gamedev', title: v.title, desc: v.desc, url: v.url });
+      }
+    }
+    if (animation && Array.isArray(animation)) {
+      for (const v of animation) {
+        await Video.create({ section: 'animation', title: v.title, desc: v.desc, url: v.url });
+      }
+    }
+    if (video && Array.isArray(video)) {
+      for (const v of video) {
+        await Video.create({ section: 'video', title: v.title, desc: v.desc, url: v.url });
+      }
+    }
+    
+    // Import models
+    if (threed && Array.isArray(threed)) {
+      for (const m of threed) {
+        await Model3D.create({ title: m.title, desc: m.desc, url: m.url });
+      }
+    }
+    
+    // Import reviews
+    if (reviews && Array.isArray(reviews)) {
+      for (const r of reviews) {
+        await Review.create({ name: r.name, role: r.role, text: r.text, stars: r.stars });
+      }
+    }
+    
+    // Import details
+    if (details) {
+      await Details.findOneAndUpdate(
+        { key: 'main' },
+        { ...details, key: 'main' },
+        { upsert: true, new: true }
+      );
+    }
+    
+    res.json({ ok: true, message: 'Data imported successfully' });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // -- Catch all: serve index.html --
 app.get('/admin', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'admin.html'));
