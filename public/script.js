@@ -1,86 +1,4 @@
-/* ===== COMPREHENSIVE ANALYTICS TRACKING ===== */
-let sessionData = {
-  sessionId: null,
-  startTime: Date.now(),
-  lastUpdate: Date.now(),
-  maxScrollDepth: 0,
-  eventsTracked: []
-};
-
-// Generate session ID
-sessionData.sessionId = 'sess_' + Math.random().toString(36).substring(2, 11);
-
-// Track scroll depth
-window.addEventListener('scroll', () => {
-  const scroll = (window.innerHeight + window.pageYOffset) / document.body.offsetHeight;
-  const depth = Math.round(scroll * 100);
-  if (depth > sessionData.maxScrollDepth) {
-    sessionData.maxScrollDepth = depth;
-  }
-});
-
-// Track time before close
-window.addEventListener('beforeunload', () => {
-  const sessionDuration = (Date.now() - sessionData.startTime) / 1000;
-  if (sessionDuration > 5) { // Only track if user stayed more than 5 seconds
-    fetch('/api/analytics/track', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        eventType: 'session_end',
-        sessionId: sessionData.sessionId,
-        pageScrollDepth: sessionData.maxScrollDepth,
-        sessionDuration: Math.round(sessionDuration)
-      }),
-      keepalive: true
-    });
-  }
-});
-
-// Track section views
-function trackSectionView(section) {
-  fetch('/api/analytics/track', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      eventType: 'section_view',
-      section: section,
-      sessionId: sessionData.sessionId
-    })
-  }).catch(e => console.log('Analytics track error:', e));
-}
-
-// Track clicks
-document.addEventListener('click', (e) => {
-  const target = e.target.closest('[data-tracking]');
-  if (target) {
-    fetch('/api/analytics/track', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        eventType: 'click',
-        clickTarget: target.getAttribute('data-tracking'),
-        clickSection: target.getAttribute('data-section'),
-        sessionId: sessionData.sessionId
-      })
-    }).catch(e => console.log('Analytics track error:', e));
-  }
-});
-
-// Track model views
-const originalLoadModel = window._loadModel;
-window._loadModel = function(url, name) {
-  fetch('/api/analytics/track', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      eventType: 'model_view',
-      modelTitle: name,
-      sessionId: sessionData.sessionId
-    })
-  }).catch(e => console.log('Analytics track error:', e));
-  return originalLoadModel.call(this, url, name);
-};
+/* ===== 3D VIEWER INITIALIZATION ===== */
 import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
 import {GLTFLoader} from 'https://unpkg.com/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
 import {OrbitControls} from 'https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js';
@@ -281,9 +199,6 @@ async function loadAll() {
     renderModels(data.threed || []);
     renderReviews(data.reviews || []);
     applyDetails(data.details || {});
-    
-    // Initialize auto-play observers for video sections
-    setTimeout(() => setupSectionAutoPlayObserver(), 300);
   } catch(e) {
     console.error('Failed to load data:', e);
   }
@@ -376,7 +291,7 @@ function renderVids(sec, items) {
       <div class="vinfo"><div class="vtitle">${item.title}</div>${item.desc ? `<div class="vdesc">${item.desc}</div>` : ''}</div>
       <div class="adel-wrap"><button class="adel-btn" onclick="delItem('video','${item._id}','${sec}');event.stopPropagation()">✕ DEL</button></div>`;
     
-    card.addEventListener('click', () => openVid(item.title, item.desc, p.embed, p.kind, item._id, sec));
+    card.addEventListener('click', () => openVid(item.title, item.desc, p.embed, p.kind));
     grid.insertBefore(card, grid.querySelector('.adm-add'));
   });
 }
@@ -427,364 +342,24 @@ function renderReviews(items) {
   });
 }
 
-/* ===== VIDEO ANALYTICS ===== */
-let videoAnalytics = {
-  videoId: null,
-  videoTitle: null,
-  section: null,
-  startTime: null,
-  startTimeUnix: null,
-  videoElement: null,
-  totalDuration: 0,
-  lastTrackedTime: 0
-};
-
-async function trackVideoAnalytics() {
-  if (!videoAnalytics.videoId || !videoAnalytics.startTime) return;
-  
-  const watchDuration = (videoAnalytics.videoElement?.currentTime || videoAnalytics.lastTrackedTime) - videoAnalytics.lastTrackedTime;
-  const completionPercent = videoAnalytics.totalDuration > 0 
-    ? Math.round(((videoAnalytics.videoElement?.currentTime || 0) / videoAnalytics.totalDuration) * 100)
-    : 0;
-  
-  try {
-    await fetch('/api/analytics/track', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        videoId: videoAnalytics.videoId,
-        videoTitle: videoAnalytics.videoTitle,
-        section: videoAnalytics.section,
-        playStartTime: videoAnalytics.startTime,
-        playEndTime: new Date(),
-        watchDuration: videoAnalytics.videoElement?.currentTime || 0,
-        totalDuration: videoAnalytics.totalDuration,
-        completionPercent: completionPercent
-      })
-    });
-  } catch (e) {
-    console.error('Failed to track video analytics:', e);
-  }
-}
-
 /* ===== VIDEO MODAL ===== */
-/* ===== CUSTOM VIDEO PLAYER ===== */
-class CustomVideoPlayer {
-  constructor(containerId, videoSrc, videoType = 'direct') {
-    this.container = document.getElementById(containerId);
-    this.videoSrc = videoSrc;
-    this.videoType = videoType;
-    this.video = null;
-    this.isPlaying = false;
-    this.isFullscreen = false;
-    this.currentTime = 0;
-    this.duration = 0;
-    
-    this.init();
-  }
-
-  init() {
-    this.container.innerHTML = `
-      <div class="custom-video-player" id="cvp-player">
-        <div class="cvp-video-container" id="cvp-video-container">
-          ${this.videoType === 'direct' 
-            ? `<video class="cvp-video" id="cvp-video-element"></video>`
-            : `<iframe class="cvp-iframe" src="${this.videoSrc}" allowfullscreen allow="autoplay;encrypted-media;accelerometer;gyroscope"></iframe>`
-          }
-        </div>
-        <div class="cvp-controls" id="cvp-controls">
-          <button class="cvp-play-pause" id="cvp-play-btn" title="Play/Pause (Space)">▶</button>
-          <div class="cvp-timeline">
-            <span class="cvp-time" id="cvp-current">0:00</span>
-            <div class="cvp-progress-bar" id="cvp-progress" title="Seek">
-              <div class="cvp-progress-fill" id="cvp-progress-fill"></div>
-            </div>
-            <span class="cvp-time" id="cvp-duration">0:00</span>
-          </div>
-          <div class="cvp-volume">
-            <button class="cvp-volume-btn" id="cvp-volume-btn" title="Mute (M)">🔊</button>
-            <div class="cvp-volume-slider" id="cvp-volume-slider">
-              <div class="cvp-volume-fill" id="cvp-volume-fill"></div>
-            </div>
-          </div>
-          <button class="cvp-speed-btn" id="cvp-speed-btn" title="Playback Speed">1×</button>
-          <button class="cvp-fullscreen-btn" id="cvp-fullscreen-btn" title="Fullscreen (F)">⛶</button>
-        </div>
-        <div class="cvp-help">
-          <div class="cvp-help-item"><span class="cvp-help-key">SPACE</span> <span>Play/Pause</span></div>
-          <div class="cvp-help-item"><span class="cvp-help-key">F</span> <span>Fullscreen</span></div>
-          <div class="cvp-help-item"><span class="cvp-help-key">M</span> <span>Mute</span></div>
-          <div class="cvp-help-item"><span class="cvp-help-key">→</span> <span>Forward 5s</span></div>
-        </div>
-      </div>`;
-
-    if (this.videoType === 'direct') {
-      this.video = document.getElementById('cvp-video-element');
-      this.video.src = this.videoSrc;
-      this.setupVideoEvents();
-    }
-    
-    this.setupControls();
-  }
-
-  setupVideoEvents() {
-    this.video.addEventListener('loadedmetadata', () => {
-      this.duration = this.video.duration;
-      this.updateDuration();
-    });
-
-    this.video.addEventListener('timeupdate', () => {
-      this.currentTime = this.video.currentTime;
-      this.updateProgress();
-    });
-
-    this.video.addEventListener('play', () => {
-      this.isPlaying = true;
-      this.updatePlayButton();
-    });
-
-    this.video.addEventListener('pause', () => {
-      this.isPlaying = false;
-      this.updatePlayButton();
-    });
-
-    this.video.addEventListener('ended', () => {
-      this.isPlaying = false;
-      this.updatePlayButton();
-    });
-  }
-
-  setupControls() {
-    const playBtn = document.getElementById('cvp-play-btn');
-    const progressBar = document.getElementById('cvp-progress');
-    const volumeBtn = document.getElementById('cvp-volume-btn');
-    const volumeSlider = document.getElementById('cvp-volume-slider');
-    const speedBtn = document.getElementById('cvp-speed-btn');
-    const fullscreenBtn = document.getElementById('cvp-fullscreen-btn');
-
-    let currentSpeed = 1;
-
-    playBtn.addEventListener('click', () => this.togglePlay());
-
-    progressBar.addEventListener('click', (e) => {
-      if (!this.video) return;
-      const rect = progressBar.getBoundingClientRect();
-      const pos = (e.clientX - rect.left) / rect.width;
-      this.video.currentTime = pos * this.duration;
-    });
-
-    volumeBtn.addEventListener('click', () => {
-      if (this.video) {
-        this.video.muted = !this.video.muted;
-        volumeBtn.textContent = this.video.muted ? '🔇' : '🔊';
-      }
-    });
-
-    volumeSlider.addEventListener('click', (e) => {
-      if (!this.video) return;
-      const rect = volumeSlider.getBoundingClientRect();
-      const pos = (e.clientX - rect.left) / rect.width;
-      this.video.volume = Math.max(0, Math.min(1, pos));
-      this.updateVolume();
-    });
-
-    speedBtn.addEventListener('click', () => {
-      if (!this.video) return;
-      const speeds = [0.5, 1, 1.25, 1.5, 2];
-      const idx = speeds.indexOf(currentSpeed);
-      currentSpeed = speeds[(idx + 1) % speeds.length];
-      this.video.playbackRate = currentSpeed;
-      speedBtn.textContent = currentSpeed + '×';
-    });
-
-    fullscreenBtn.addEventListener('click', () => this.toggleFullscreen());
-
-    // Keyboard shortcuts
-    document.addEventListener('keydown', (e) => {
-      if (!document.getElementById('cvp-player')) return;
-      
-      switch(e.code) {
-        case 'Space':
-          e.preventDefault();
-          if (this.video) this.togglePlay();
-          break;
-        case 'KeyF':
-          this.toggleFullscreen();
-          break;
-        case 'KeyM':
-          if (this.video) {
-            this.video.muted = !this.video.muted;
-            volumeBtn.textContent = this.video.muted ? '🔇' : '🔊';
-          }
-          break;
-        case 'ArrowRight':
-          if (this.video) this.video.currentTime = Math.min(this.duration, this.video.currentTime + 5);
-          break;
-        case 'ArrowLeft':
-          if (this.video) this.video.currentTime = Math.max(0, this.video.currentTime - 5);
-          break;
-      }
-    });
-  }
-
-  togglePlay() {
-    if (!this.video) return;
-    if (this.video.paused) {
-      this.video.play();
-    } else {
-      this.video.pause();
-    }
-  }
-
-  updatePlayButton() {
-    const btn = document.getElementById('cvp-play-btn');
-    if (btn) btn.textContent = this.isPlaying ? '⏸' : '▶';
-  }
-
-  updateProgress() {
-    const fill = document.getElementById('cvp-progress-fill');
-    const current = document.getElementById('cvp-current');
-    if (fill) fill.style.width = (this.currentTime / this.duration * 100) + '%';
-    if (current) current.textContent = this.formatTime(this.currentTime);
-  }
-
-  updateDuration() {
-    const duration = document.getElementById('cvp-duration');
-    if (duration) duration.textContent = this.formatTime(this.duration);
-  }
-
-  updateVolume() {
-    if (!this.video) return;
-    const fill = document.getElementById('cvp-volume-fill');
-    if (fill) fill.style.width = (this.video.volume * 100) + '%';
-  }
-
-  formatTime(seconds) {
-    if (!seconds || isNaN(seconds)) return '0:00';
-    const hrs = Math.floor(seconds / 3600);
-    const mins = Math.floor((seconds % 3600) / 60);
-    const secs = Math.floor(seconds % 60);
-    if (hrs > 0) return `${hrs}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  }
-
-  toggleFullscreen() {
-    const player = document.getElementById('cvp-player');
-    if (!player) return;
-
-    this.isFullscreen = !this.isFullscreen;
-    
-    if (this.isFullscreen) {
-      player.classList.add('cvp-fullscreen');
-      document.body.style.overflow = 'hidden';
-      if (this.video) this.video.parentElement.style.height = '100vh';
-    } else {
-      player.classList.remove('cvp-fullscreen');
-      document.body.style.overflow = '';
-      if (this.video) this.video.parentElement.style.height = '';
-    }
-  }
-}
-
-/* ===== AUTO-PLAY ON SCROLL ===== */
-function setupAutoPlayVideos() {
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      const video = entry.target.querySelector('video');
-      if (!video) return;
-
-      if (entry.isIntersecting && entry.intersectionRatio > 0.5) {
-        if (video.paused) {
-          video.play().catch(() => {}); // Catch if autoplay is not allowed
-        }
-      } else {
-        if (!video.paused) {
-          video.pause();
-        }
-      }
-    });
-  }, { threshold: 0.5 });
-
-  // Observe all video containers after a delay
-  setTimeout(() => {
-    document.querySelectorAll('.cvp-video-container').forEach(container => {
-      observer.observe(container);
-    });
-  }, 500);
-}
-
-/* ===== VIDEO SECTION AUTO-PLAY OBSERVER ===== */
-function setupSectionAutoPlayObserver() {
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting && entry.intersectionRatio > 0.7) {
-        const section = entry.target.closest('section');
-        if (section) {
-          trackSectionView(section.id);
-        }
-      }
-    });
-  }, { threshold: 0.7 });
-
-  document.querySelectorAll('.video-grid').forEach(grid => {
-    observer.observe(grid);
-  });
-}
-
-
-function openVid(title, desc, embed, kind, videoId, section) {
+function openVid(title, desc, embed, kind) {
   document.getElementById('mod-title').textContent = title.toUpperCase();
   document.getElementById('mod-desc').textContent = desc || '';
-  
-  videoAnalytics.videoId = videoId;
-  videoAnalytics.videoTitle = title;
-  videoAnalytics.section = section;
-  videoAnalytics.startTime = new Date();
-  videoAnalytics.startTimeUnix = Date.now();
-  videoAnalytics.lastTrackedTime = 0;
-
-  const embedContainer = document.getElementById('mod-embed');
-  embedContainer.innerHTML = '';
-  
-  // Create custom video player
-  const player = new CustomVideoPlayer('mod-embed', embed, kind);
-  
-  if (kind === 'direct') {
-    videoAnalytics.videoElement = document.getElementById('cvp-video-element');
-    if (videoAnalytics.videoElement) {
-      videoAnalytics.videoElement.addEventListener('loadedmetadata', () => {
-        videoAnalytics.totalDuration = videoAnalytics.videoElement.duration || 0;
-      });
-      videoAnalytics.videoElement.addEventListener('timeupdate', () => {
-        videoAnalytics.lastTrackedTime = videoAnalytics.videoElement.currentTime;
-      });
-    }
-  } else {
-    videoAnalytics.videoElement = null;
-    videoAnalytics.totalDuration = 0;
-  }
-  
-  // Setup auto-play for scrolled content
-  setTimeout(() => setupAutoPlayVideos(), 100);
-  
+  document.getElementById('mod-embed').innerHTML = kind === 'direct'
+    ? `<video controls autoplay style="width:100%;height:100%"><source src="${embed}"></video>`
+    : `<iframe src="${embed}" allowfullscreen allow="autoplay;encrypted-media"></iframe>`;
   document.getElementById('vid-modal').classList.add('open');
 }
 
 window.closeVid = () => {
-  // Track final analytics before closing
-  trackVideoAnalytics();
-  
   document.getElementById('vid-modal').classList.remove('open');
   document.getElementById('mod-embed').innerHTML = '';
-  videoAnalytics.videoId = null;
-  videoAnalytics.videoElement = null;
 };
 
 document.getElementById('vid-modal').addEventListener('click', e => {
   if (e.target === document.getElementById('vid-modal')) window.closeVid();
 });
-
-
 
 /* ===== HIRE ME ===== */
 window.hireSend = ch => {
@@ -860,12 +435,11 @@ window.openAdminTo = tab => {
 
 /* ===== ADMIN TABS ===== */
 window.apTab = tab => {
-  const tabs = ['gamedev', 'threed', 'animation', 'video', 'reviews', 'details', 'analytics', 'data'];
+  const tabs = ['gamedev', 'threed', 'animation', 'video', 'reviews', 'details', 'data'];
   document.querySelectorAll('.ap-tab').forEach((t, i) => t.classList.toggle('on', tabs[i] === tab));
   document.querySelectorAll('.ap-sec').forEach(s => s.classList.remove('on'));
   document.getElementById('ap-' + tab).classList.add('on');
   if (tab === 'details') loadAll();
-  if (tab === 'analytics') loadAnalytics();
 };
 
 /* ===== ADD ITEMS ===== */
@@ -956,63 +530,6 @@ addEventListener('keydown', e => {
     window.closePw();
   }
 });
-
-/* ===== LOAD ANALYTICS ===== */
-window.loadAnalytics = async () => {
-  if (!isAdm) return;
-  
-  const days = document.getElementById('analytics-days')?.value || 30;
-  const section = document.getElementById('analytics-section')?.value || '';
-  
-  try {
-    const params = new URLSearchParams({ days });
-    if (section) params.append('section', section);
-    
-    const res = await fetch('/api/analytics?' + params.toString(), {
-      headers: { 'x-admin-password': getAdmPw() }
-    });
-    const data = await res.json();
-    
-    // Update stats
-    document.getElementById('stat-plays').textContent = data.totalPlays || 0;
-    document.getElementById('stat-avgwatch').textContent = formatSeconds(data.avgWatchDuration || 0);
-    document.getElementById('stat-avgcomp').textContent = Math.round(data.avgCompletion || 0) + '%';
-    
-    // Render by video
-    const byVideoEl = document.getElementById('analytics-by-video');
-    byVideoEl.innerHTML = '';
-    
-    Object.entries(data.byVideo || {}).forEach(([title, stats]) => {
-      const div = document.createElement('div');
-      div.style.cssText = 'margin-bottom:.6rem;padding:.5rem;background:var(--bg3);border:1px solid rgba(74,158,255,.08)';
-      div.innerHTML = `
-        <div style="color:var(--txt);margin-bottom:.3rem;font-weight:bold">${escapeHtml(title)}</div>
-        <div>Plays: <span style="color:var(--blue)">${stats.plays}</span></div>
-        <div>Avg Watch: <span style="color:var(--blue)">${formatSeconds(stats.avgWatch)}</span></div>
-        <div>Completion: <span style="color:var(--blue)">${Math.round(stats.avgCompletion)}%</span></div>
-      `;
-      byVideoEl.appendChild(div);
-    });
-    
-    if (Object.keys(data.byVideo || {}).length === 0) {
-      byVideoEl.innerHTML = '<div style="color:var(--txt-d);text-align:center;padding:1rem">No analytics data yet</div>';
-    }
-  } catch (e) {
-    console.error('Failed to load analytics:', e);
-  }
-};
-
-function formatSeconds(seconds) {
-  if (!seconds || seconds < 60) return Math.round(seconds) + 's';
-  const mins = Math.round(seconds / 60);
-  if (mins < 60) return mins + 'm';
-  return Math.round(mins / 60) + 'h';
-}
-
-function escapeHtml(text) {
-  const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
-  return text.replace(/[&<>"']/g, m => map[m]);
-}
 
 /* ===== MOBILE NAV ===== */
 window.toggleMobileNav = () => {
