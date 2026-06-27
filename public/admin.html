@@ -37,6 +37,16 @@
 </head>
 <body>
 
+<div id="admin-lock-screen" style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.94);z-index:9999;padding:1rem;">
+  <div style="width:100%;max-width:380px;background:var(--bg2);border:1px solid var(--blue);padding:2rem;border-radius:12px;text-align:center;">
+    <div style="font-family:var(--disp);font-size:1.1rem;color:var(--blue);margin-bottom:1rem;letter-spacing:.08em;">ADMIN ACCESS</div>
+    <input id="admin-pw" type="password" placeholder="Password" style="width:100%;background:var(--bg3);border:1px solid var(--bdr);color:var(--txt);font-family:var(--mono);font-size:.95rem;padding:.8rem 1rem;outline:none;margin-bottom:1rem;letter-spacing:.25em;" />
+    <button id="admin-login-btn" class="btn btn-p" style="width:100%;">ENTER</button>
+    <div id="admin-login-error" style="display:none;color:#ff4466;font-size:.8rem;margin-top:.85rem;letter-spacing:.05em;">ACCESS DENIED // incorrect password</div>
+  </div>
+</div>
+<div id="admin-wrap" style="display:none;">
+
 <nav id="nav" style="margin-bottom: 2rem;">
   <a href="/" class="nav-logo">GENIUS<span>_</span>REALMS</a>
   <div class="nav-right">
@@ -236,6 +246,47 @@
     document.querySelectorAll('.star-btn').forEach(b => b.classList.toggle('on', parseInt(b.dataset.v) <= v));
   }
   setStar(5);
+</script>
+
+<script>
+  const ADMIN_PASSWORD = 'admin123';
+  const ADMIN_KEY = 'netlify_admin_auth';
+  const lockScreen = document.getElementById('admin-lock-screen');
+  const adminWrap = document.getElementById('admin-wrap');
+  const pwInput = document.getElementById('admin-pw');
+  const errMsg = document.getElementById('admin-login-error');
+
+  function showAdmin() {
+    lockScreen.style.display = 'none';
+    adminWrap.style.display = 'block';
+  }
+
+  function logout() {
+    localStorage.removeItem(ADMIN_KEY);
+    window.location.href = '/admin';
+  }
+
+  function checkAuth() {
+    const value = pwInput.value.trim();
+    if (value === ADMIN_PASSWORD) {
+      localStorage.setItem(ADMIN_KEY, '1');
+      showAdmin();
+      pwInput.value = '';
+      errMsg.style.display = 'none';
+    } else {
+      errMsg.style.display = 'block';
+      pwInput.focus();
+    }
+  }
+
+  document.getElementById('admin-login-btn').addEventListener('click', checkAuth);
+  pwInput.addEventListener('keydown', event => {
+    if (event.key === 'Enter') checkAuth();
+  });
+
+  if (localStorage.getItem(ADMIN_KEY) === '1') {
+    showAdmin();
+  }
 </script>
 
 </body>
