@@ -162,8 +162,13 @@ app.post('/api/auth', (req, res) => {
   else res.status(401).json({ error: 'Wrong password' });
 });
 
+// -- ADMIN PAGE --
+app.get('/admin', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+});
+
 // -- Catch all: serve index.html --
-app.get('/{*path}', (req, res) => {
+app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 

@@ -202,6 +202,7 @@
         <input type="text" class="form-input" id="dt-yt" placeholder="https://www.youtube.com/@yourhandle">
       </div>
       <button class="btn-submit" onclick="saveDetails()">SAVE DETAILS</button>
+      <p id="details-save-msg" style="display:none;color:var(--blue);font-size:0.85rem;margin-top:0.8rem;">DETAILS SAVED LOCALLY ✓</p>
     </div>
 
     <!-- DATA MANAGEMENT -->
@@ -222,22 +223,148 @@
 </div>
 
 <script>
-  // Dummy functions - replace with actual API calls
-  const API_BASE = '';
-  const getAuthToken = () => sessionStorage.getItem('gr_adm_pw');
+  const API_BASE = ''; // If your backend runs on a different host, set it here.
+  const ADMIN_KEY = 'genius_realms_admin';
+  const ADMIN_PW_KEY = 'genius_realms_admin_pw';
+  const lockScreen = document.getElementById('admin-lock-screen');
+  const adminWrap = document.getElementById('admin-wrap');
+  const pwInput = document.getElementById('admin-pw');
+  const errMsg = document.getElementById('admin-login-error');
+  const detailsMsg = document.getElementById('details-save-msg');
 
-  function addGameDevVideo() { alert('Add game dev video - implement API call'); }
-  function add3DModel() { alert('Add 3D model - implement API call'); }
-  function addAnimationVideo() { alert('Add animation - implement API call'); }
-  function addVideoEditVideo() { alert('Add video editing - implement API call'); }
-  function addReview() { alert('Add review - implement API call'); }
-  function saveDetails() { alert('Save details - implement API call'); }
-  function exportData() { alert('Export data - implement API call'); }
-  function importData(e) { alert('Import data - implement API call'); }
-  function changePw() { alert('Change password - implement API call'); }
-  function logout() { 
-    sessionStorage.removeItem('gr_adm_pw');
-    window.location.href = '/';
+  function apiUrl(path) {
+    return API_BASE ? `${API_BASE}${path}` : path;
+  }
+
+  function getAdmPw() {
+    return localStorage.getItem(ADMIN_PW_KEY) || '';
+  }
+
+  function getAuthHeaders() {
+    const pw = getAdmPw();
+    return pw ? { 'x-admin-password': pw } : {};
+  }
+
+  function setDetailsMessage(text, isError = false) {
+    detailsMsg.style.display = 'block';
+    detailsMsg.style.color = isError ? '#ff4466' : 'var(--blue)';
+    detailsMsg.textContent = text;
+    if (!isError) {
+      setTimeout(() => { detailsMsg.style.display = 'none'; }, 2500);
+    }
+  }
+
+  async function apiAuth(password) {
+    const res = await fetch(apiUrl('/api/auth'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password })
+    });
+    return res.ok;
+  }
+
+  async function loadDetailsFromApi() {
+    const res = await fetch(apiUrl('/api/data'));
+    if (!res.ok) return;
+    const data = await res.json();
+    const d = data.details || {};
+    document.getElementById('dt-org').value = d.org || '';
+    document.getElementById('dt-tag').value = d.tag || '';
+    document.getElementById('dt-h1').value = d.h1 || '';
+    document.getElementById('dt-h2').value = d.h2 || '';
+    document.getElementById('dt-fn').value = d.fn || '';
+    document.getElementById('dt-email').value = d.email || '';
+    document.getElementById('dt-phone').value = d.phone || '';
+    document.getElementById('dt-yt').value = d.yt || '';
+  }
+
+  async function saveDetails() {
+    const details = {
+      org: document.getElementById('dt-org').value.trim(),
+      tag: document.getElementById('dt-tag').value.trim(),
+      h1: document.getElementById('dt-h1').value.trim(),
+      h2: document.getElementById('dt-h2').value.trim(),
+      fn: document.getElementById('dt-fn').value.trim(),
+      email: document.getElementById('dt-email').value.trim(),
+      phone: document.getElementById('dt-phone').value.trim().replace(/\D/g, ''),
+      yt: document.getElementById('dt-yt').value.trim()
+    };
+
+    try {
+      const res = await fetch(apiUrl('/api/details'), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeaders()
+        },
+        body: JSON.stringify(details)
+      });
+
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || 'Save failed');
+      }
+
+      setDetailsMessage('DETAILS SAVED ✓');
+    } catch (err) {
+      setDetailsMessage('SAVE FAILED: ' + (err.message || 'network error'), true);
+    }
+  }
+
+  function addGameDevVideo() { alert('Add game dev video is not available in this admin panel.'); }
+  function add3DModel() { alert('Add 3D model is not available in this admin panel.'); }
+  function addAnimationVideo() { alert('Add animation is not available in this admin panel.'); }
+  function addVideoEditVideo() { alert('Add video editing is not available in this admin panel.'); }
+  function addReview() { alert('Add review is not available in this admin panel.'); }
+  function exportData() { alert('Export is not available in this admin panel.'); }
+  function importData(e) { alert('Import is not available in this admin panel.'); }
+  function changePw() { alert('Password change must be done in your backend environment (.env ADMIN_PASSWORD).'); }
+
+  function showAdmin() {
+    lockScreen.style.display = 'none';
+    adminWrap.style.display = 'block';
+  }
+
+  function logout() {
+    localStorage.removeItem(ADMIN_KEY);
+    localStorage.removeItem(ADMIN_PW_KEY);
+    window.location.href = '/admin';
+  }
+
+  async function checkAuth() {
+    const value = pwInput.value.trim();
+    if (!value) return;
+
+    try {
+      const ok = await apiAuth(value);
+      if (!ok) {
+        errMsg.textContent = 'ACCESS DENIED // incorrect password';
+        errMsg.style.display = 'block';
+        pwInput.focus();
+        return;
+      }
+
+      localStorage.setItem(ADMIN_KEY, '1');
+      localStorage.setItem(ADMIN_PW_KEY, value);
+      errMsg.style.display = 'none';
+      pwInput.value = '';
+      showAdmin();
+      loadDetailsFromApi();
+    } catch (e) {
+      errMsg.textContent = 'Unable to reach backend';
+      errMsg.style.display = 'block';
+      console.error(e);
+    }
+  }
+
+  document.getElementById('admin-login-btn').addEventListener('click', checkAuth);
+  pwInput.addEventListener('keydown', event => {
+    if (event.key === 'Enter') checkAuth();
+  });
+
+  if (localStorage.getItem(ADMIN_KEY) === '1' && getAdmPw()) {
+    showAdmin();
+    loadDetailsFromApi().catch(() => {});
   }
 
   let curStar = 5;
@@ -247,47 +374,8 @@
   }
   setStar(5);
 </script>
-
-<script>
-  const ADMIN_PASSWORD = 'admin123';
-  const ADMIN_KEY = 'netlify_admin_auth';
-  const lockScreen = document.getElementById('admin-lock-screen');
-  const adminWrap = document.getElementById('admin-wrap');
-  const pwInput = document.getElementById('admin-pw');
-  const errMsg = document.getElementById('admin-login-error');
-
-  function showAdmin() {
-    lockScreen.style.display = 'none';
-    adminWrap.style.display = 'block';
-  }
-
-  function logout() {
-    localStorage.removeItem(ADMIN_KEY);
-    window.location.href = '/admin';
-  }
-
-  function checkAuth() {
-    const value = pwInput.value.trim();
-    if (value === ADMIN_PASSWORD) {
-      localStorage.setItem(ADMIN_KEY, '1');
-      showAdmin();
-      pwInput.value = '';
-      errMsg.style.display = 'none';
-    } else {
-      errMsg.style.display = 'block';
-      pwInput.focus();
-    }
-  }
-
-  document.getElementById('admin-login-btn').addEventListener('click', checkAuth);
-  pwInput.addEventListener('keydown', event => {
-    if (event.key === 'Enter') checkAuth();
-  });
-
-  if (localStorage.getItem(ADMIN_KEY) === '1') {
-    showAdmin();
-  }
-</script>
+</body>
+</html>
 
 </body>
 </html>
